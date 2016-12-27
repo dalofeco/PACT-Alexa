@@ -1,0 +1,12 @@
+now
+morning
+afternoon
+night
+noon
+tonight
+dawn
+dusk
+sunset
+sunrise
+midday
+evening

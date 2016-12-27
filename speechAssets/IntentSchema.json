@@ -1,0 +1,21 @@
+{
+    "intents": [
+        {
+            "intent": "BestTimeIntent",
+            "slots": [
+                {
+                    "name": "Activity",
+                    "type": "LIST_OF_ACTIVITES"
+                },
+                {
+                    "name": "SpecifiedDay",
+                    "type": "LIST_OF_DAYS"
+                },
+                {
+                    "name": "SpecifiedTime",
+                    "type": "LIST_OF_TIMES"
+                }
+            ]
+        }
+    ]
+}

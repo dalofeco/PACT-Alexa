@@ -1,0 +1,25 @@
+{
+  "name": "pact",
+  "version": "1.0.0",
+  "description": "Alexa skill to find ideal times according to weather conditions for performing outdoor activities.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dalofeco/PACT-Alexa.git"
+  },
+  "author": "Dalofeco",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dalofeco/PACT-Alexa/issues"
+  },
+  "homepage": "https://github.com/dalofeco/PACT-Alexa#readme",
+  "dependencies": {
+    "alexa-sdk": "^1.0.6",
+    "array-includes": "^3.0.2",
+    "async": "^2.1.4",
+    "node-rest-client": "^2.0.1"
+  }
+}
