@@ -1,0 +1,39 @@
+soccer
+basketball
+volleyball
+rollerblading
+bicycle
+cycling
+biking
+hiking
+jogging
+lacrosse
+power walking
+running
+trotting
+walking
+
+tennis
+archery
+cricket
+golf
+baseball
+
+kayaking
+boating
+swimming
+tubing
+water skiing
+surfing
+surf
+    
+sailing
+wind surfing
+kite surfing
+    
+skiing
+snowboarding
+ice skating
+snow
+snowmobile
+snowman

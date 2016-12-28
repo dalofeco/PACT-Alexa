@@ -1,55 +1,213 @@
-BestTimeIntent what is the best time to {ActivityName}
-BestTimeIntent what is the best time to play {ActivityName}
-BestTimeIntent what is the best time to do {ActivityName}
-BestTimeIntent when is the best time for {ActivityName}
-BestTimeIntent when is the best time to {ActivityName}
-BestTimeIntent what is the best time for {ActivityName}
-BestTimeIntent best time for {ActivityName}
-BestTimeIntent best time to {ActivityName}
-BestTimeIntent when is the weather suitable for {ActivityName}
-BestTimeIntent when the weather is suitable for {ActivityName}
-BestTimeIntent when is the best conditions to {ActivityName}
-BestTimeIntent when are the best conditions for {ActivityName}
-BestTimeIntent what's the best time to {ActivityName}
-BestTimeIntent when's the best time for {ActivityName}
-BestTimeIntent when are the ideal conditions to {ActivityName}
-BestTimeIntent when are the ideal conditions to go {ActivityName}
-BestTimeIntent when are the ideal conditions for {ActivityName}
+BestTimeIntent best time to {Activity}
+BestTimeIntent best time to play {Activity}
+BestTimeIntent best time to do {Activity}
+BestTimeIntent best time to go {Activity}
+BestTimeIntent best time for {Activity}
 
-BestTimeIntent what is the best time to {ActivityName}
-BestTimeIntent what is the best time to play {ActivityName} on {SpecifiedDay}
-BestTimeIntent what is the best time to do {ActivityName} on {SpecifiedDay}
-BestTimeIntent when is the best time for {ActivityName} on {SpecifiedDay}
-BestTimeIntent when is the best time to {ActivityName} on {SpecifiedDay}
-BestTimeIntent what is the best time for {ActivityName} on {SpecifiedDay}
-BestTimeIntent best time for {ActivityName} on {SpecifiedDay}
-BestTimeIntent best time to {ActivityName} on {SpecifiedDay}
-BestTimeIntent when is the weather suitable for {ActivityName} on {SpecifiedDay}
-BestTimeIntent when the weather is suitable for {ActivityName} on {SpecifiedDay}
-BestTimeIntent when is the best conditions to {ActivityName} on {SpecifiedDay}
-BestTimeIntent when are the best conditions for {ActivityName} on {SpecifiedDay}
-BestTimeIntent what's the best time to {ActivityName} on {SpecifiedDay}
-BestTimeIntent when's the best time for {ActivityName} on {SpecifiedDay}
-BestTimeIntent when are the ideal conditions to {ActivityName} on {SpecifiedDay}
-BestTimeIntent when are the ideal conditions to go {ActivityName} on {SpecifiedDay}
-BestTimeIntent when are the ideal conditions for {ActivityName} on {SpecifiedDay}
-BestTimeIntent when is the best time to {ActivityName} on {SpecifiedDay}
+BestTimeIntent weather suitable for {Activity}
+BestTimeIntent weather suitable to {Activity}
+BestTimeIntent weather suitable to go {Activity}
+BestTimeIntent weather suitable to play {Activity}
+BestTimeIntent weather suitable to do {Activity}
 
-BestTimeIntent what is the best time to {ActivityName}
-BestTimeIntent what is the best time to play {ActivityName} on {SpecifiedDay} {SpecifiedTime}
-BestTimeIntent what is the best time to do {ActivityName} on {SpecifiedDay} {SpecifiedTime}
-BestTimeIntent when is the best time for {ActivityName} on {SpecifiedDay} {SpecifiedTime}
-BestTimeIntent when is the best time to {ActivityName} on {SpecifiedDay} {SpecifiedTime}
-BestTimeIntent what is the best time for {ActivityName} on {SpecifiedDay} {SpecifiedTime}
-BestTimeIntent best time for {ActivityName} on {SpecifiedDay} {SpecifiedTime}
-BestTimeIntent best time to {ActivityName} on {SpecifiedDay} {SpecifiedTime}
-BestTimeIntent when is the weather suitable for {ActivityName} on {SpecifiedDay} {SpecifiedTime}
-BestTimeIntent when the weather is suitable for {ActivityName} on {SpecifiedDay} {SpecifiedTime}
-BestTimeIntent when is the best conditions to {ActivityName} on {SpecifiedDay} {SpecifiedTime}
-BestTimeIntent when are the best conditions for {ActivityName} on {SpecifiedDay} {SpecifiedTime}
-BestTimeIntent what's the best time to {ActivityName} on {SpecifiedDay} {SpecifiedTime}
-BestTimeIntent when's the best time for {ActivityName} on {SpecifiedDay} {SpecifiedTime}
-BestTimeIntent when are the ideal conditions to {ActivityName} on {SpecifiedDay} {SpecifiedTime}
-BestTimeIntent when are the ideal conditions to go {ActivityName} on {SpecifiedDay} {SpecifiedTime}
-BestTimeIntent when are the ideal conditions for {ActivityName} on {SpecifiedDay} {SpecifiedTime}
-BestTimeIntent when is the best time to {ActivityName} on {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent weather is suitable for {Activity}
+BestTimeIntent weather is suitable to {Activity}
+BestTimeIntent weather is suitable to go {Activity}
+BestTimeIntent weather is suitable to play {Activity}
+BestTimeIntent weather is suitable to do {Activity}
+
+BestTimeIntent suitable conditions for {Activity}
+BestTimeIntent suitable conditions to {Activity}
+BestTimeIntent suitable conditions to go {Activity}
+BestTimeIntent suitable conditions to play {Activity}
+BestTimeIntent suitable conditions to do {Activity}
+
+BestTimeIntent ideal conditions for {Activity}
+BestTimeIntent ideal conditions to {Activity}
+BestTimeIntent ideal conditions to go {Activity}
+BestTimeIntent ideal conditions to do {Activity}
+BestTimeIntent ideal conditions to play {Activity}
+
+BestTimeIntent best conditions to {Activity}
+BestTimeIntent best conditions to go {Activity}
+BestTimeIntent best conditions to do {Activity}
+BestTimeIntent best conditions to play {Activity}
+BestTimeIntent best conditions for {Activity}
+
+BestTimeIntent ideal conditions to {Activity}
+BestTimeIntent ideal conditions to go {Activity}
+BestTimeIntent ideal conditions to play {Activity}
+BestTimeIntent ideal conditions to do {Activity}
+BestTimeIntent ideal conditions for {Activity}
+
+
+BestTimeIntent best time to {Activity} on {SpecifiedDay}
+BestTimeIntent best time to play {Activity} on {SpecifiedDay}
+BestTimeIntent best time to do {Activity} on {SpecifiedDay}
+BestTimeIntent best time to go {Activity} on {SpecifiedDay}
+BestTimeIntent best time for {Activity} on {SpecifiedDay}
+
+BestTimeIntent weather suitable for {Activity} on {SpecifiedDay}
+BestTimeIntent weather suitable to {Activity} on {SpecifiedDay}
+BestTimeIntent weather suitable to go {Activity} on {SpecifiedDay}
+BestTimeIntent weather suitable to play {Activity} on {SpecifiedDay}
+BestTimeIntent weather suitable to do {Activity} on {SpecifiedDay}
+
+BestTimeIntent weather is suitable for {Activity} on {SpecifiedDay}
+BestTimeIntent weather is suitable to {Activity} on {SpecifiedDay}
+BestTimeIntent weather is suitable to go {Activity} on {SpecifiedDay}
+BestTimeIntent weather is suitable to play {Activity} on {SpecifiedDay}
+BestTimeIntent weather is suitable to do {Activity} on {SpecifiedDay}
+
+BestTimeIntent suitable conditions for {Activity} on {SpecifiedDay}
+BestTimeIntent suitable conditions to {Activity} on {SpecifiedDay}
+BestTimeIntent suitable conditions to go {Activity} on {SpecifiedDay}
+BestTimeIntent suitable conditions to play {Activity} on {SpecifiedDay}
+BestTimeIntent suitable conditions to do {Activity} on {SpecifiedDay}
+
+BestTimeIntent ideal conditions for {Activity} on {SpecifiedDay}
+BestTimeIntent ideal conditions to {Activity} on {SpecifiedDay}
+BestTimeIntent ideal conditions to go {Activity} on {SpecifiedDay}
+BestTimeIntent ideal conditions to do {Activity} on {SpecifiedDay}
+BestTimeIntent ideal conditions to play {Activity} on {SpecifiedDay}
+
+BestTimeIntent best conditions to {Activity} on {SpecifiedDay}
+BestTimeIntent best conditions to go {Activity} on {SpecifiedDay}
+BestTimeIntent best conditions to do {Activity} on {SpecifiedDay}
+BestTimeIntent best conditions to play {Activity} on {SpecifiedDay}
+BestTimeIntent best conditions for {Activity} on {SpecifiedDay}
+
+BestTimeIntent ideal conditions to {Activity} on {SpecifiedDay}
+BestTimeIntent ideal conditions to go {Activity} on {SpecifiedDay}
+BestTimeIntent ideal conditions to play {Activity} on {SpecifiedDay}
+BestTimeIntent ideal conditions to do {Activity} on {SpecifiedDay}
+BestTimeIntent ideal conditions for {Activity} on {SpecifiedDay}
+
+
+BestTimeIntent best time to {Activity} on {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent best time to play {Activity} on {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent best time to do {Activity} on {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent best time to go {Activity} on {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent best time for {Activity} on {SpecifiedDay} {SpecifiedTime}
+
+BestTimeIntent weather suitable for {Activity} on {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent weather suitable to {Activity} on {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent weather suitable to go {Activity} on {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent weather suitable to play {Activity} on {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent weather suitable to do {Activity} on {SpecifiedDay} {SpecifiedTime}
+
+BestTimeIntent weather is suitable for {Activity} on {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent weather is suitable to {Activity} on {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent weather is suitable to go {Activity} on {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent weather is suitable to play {Activity} on {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent weather is suitable to do {Activity} on {SpecifiedDay} {SpecifiedTime}
+
+BestTimeIntent suitable conditions for {Activity} on {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent suitable conditions to {Activity} on {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent suitable conditions to go {Activity} on {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent suitable conditions to play {Activity} on {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent suitable conditions to do {Activity} on {SpecifiedDay} {SpecifiedTime}
+
+BestTimeIntent ideal conditions for {Activity} on {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent ideal conditions to {Activity} on {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent ideal conditions to go {Activity} on {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent ideal conditions to do {Activity} on {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent ideal conditions to play {Activity} on {SpecifiedDay} {SpecifiedTime}
+
+BestTimeIntent best conditions to {Activity} on {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent best conditions to go {Activity} on {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent best conditions to do {Activity} on {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent best conditions to play {Activity} on {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent best conditions for {Activity} on {SpecifiedDay} {SpecifiedTime}
+
+BestTimeIntent ideal conditions to {Activity} on {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent ideal conditions to go {Activity} on {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent ideal conditions to play {Activity} on {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent ideal conditions to do {Activity} on {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent ideal conditions for {Activity} on {SpecifiedDay} {SpecifiedTime}
+
+
+BestTimeIntent best time to {Activity} {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent best time to play {Activity} {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent best time to do {Activity} {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent best time to go {Activity} {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent best time for {Activity} {SpecifiedDay} {SpecifiedTime}
+
+BestTimeIntent weather suitable for {Activity} {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent weather suitable to {Activity} {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent weather suitable to go {Activity} {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent weather suitable to play {Activity} {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent weather suitable to do {Activity} {SpecifiedDay} {SpecifiedTime}
+
+BestTimeIntent weather is suitable for {Activity} {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent weather is suitable to {Activity} {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent weather is suitable to go {Activity} {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent weather is suitable to play {Activity} {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent weather is suitable to do {Activity} {SpecifiedDay} {SpecifiedTime}
+
+BestTimeIntent suitable conditions for {Activity} {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent suitable conditions to {Activity} {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent suitable conditions to go {Activity} {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent suitable conditions to play {Activity} {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent suitable conditions to do {Activity} {SpecifiedDay} {SpecifiedTime}
+
+BestTimeIntent ideal conditions for {Activity} {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent ideal conditions to {Activity} {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent ideal conditions to go {Activity} {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent ideal conditions to do {Activity} {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent ideal conditions to play {Activity} {SpecifiedDay} {SpecifiedTime}
+
+BestTimeIntent best conditions to {Activity} {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent best conditions to go {Activity} {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent best conditions to do {Activity} {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent best conditions to play {Activity} {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent best conditions for {Activity} {SpecifiedDay} {SpecifiedTime}
+
+BestTimeIntent ideal conditions to {Activity} {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent ideal conditions to go {Activity} {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent ideal conditions to play {Activity} {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent ideal conditions to do {Activity} {SpecifiedDay} {SpecifiedTime}
+BestTimeIntent ideal conditions for {Activity} {SpecifiedDay} {SpecifiedTime}
+
+
+BestTimeIntent best time to {Activity} in the {SpecifiedTime}
+BestTimeIntent best time to play {Activity} in the {SpecifiedTime}
+BestTimeIntent best time to do {Activity} in the {SpecifiedTime}
+BestTimeIntent best time to go {Activity} in the {SpecifiedTime}
+BestTimeIntent best time for {Activity} in the {SpecifiedTime}
+
+BestTimeIntent weather suitable for {Activity} in the {SpecifiedTime}
+BestTimeIntent weather suitable to {Activity} in the {SpecifiedTime}
+BestTimeIntent weather suitable to go {Activity} in the {SpecifiedTime}
+BestTimeIntent weather suitable to play {Activity} in the {SpecifiedTime}
+BestTimeIntent weather suitable to do {Activity} in the {SpecifiedTime}
+
+BestTimeIntent weather is suitable for {Activity} in the {SpecifiedTime}
+BestTimeIntent weather is suitable to {Activity} in the {SpecifiedTime}
+BestTimeIntent weather is suitable to go {Activity} in the {SpecifiedTime}
+BestTimeIntent weather is suitable to play {Activity} in the {SpecifiedTime}
+BestTimeIntent weather is suitable to do {Activity} in the {SpecifiedTime}
+
+BestTimeIntent suitable conditions for {Activity} in the {SpecifiedTime}
+BestTimeIntent suitable conditions to {Activity} in the {SpecifiedTime}
+BestTimeIntent suitable conditions to go {Activity} in the {SpecifiedTime}
+BestTimeIntent suitable conditions to play {Activity} in the {SpecifiedTime}
+BestTimeIntent suitable conditions to do {Activity} in the {SpecifiedTime}
+
+BestTimeIntent ideal conditions for {Activity} in the {SpecifiedTime}
+BestTimeIntent ideal conditions to {Activity} in the {SpecifiedTime}
+BestTimeIntent ideal conditions to go {Activity} in the {SpecifiedTime}
+BestTimeIntent ideal conditions to do {Activity} in the {SpecifiedTime}
+BestTimeIntent ideal conditions to play {Activity} in the {SpecifiedTime}
+
+BestTimeIntent best conditions to {Activity} in the {SpecifiedTime}
+BestTimeIntent best conditions to go {Activity} in the {SpecifiedTime}
+BestTimeIntent best conditions to do {Activity} in the {SpecifiedTime}
+BestTimeIntent best conditions to play {Activity} in the {SpecifiedTime}
+BestTimeIntent best conditions for {Activity} in the {SpecifiedTime}
+
+BestTimeIntent ideal conditions to {Activity} in the {SpecifiedTime}
+BestTimeIntent ideal conditions to go {Activity} in the {SpecifiedTime}
+BestTimeIntent ideal conditions to play {Activity} in the {SpecifiedTime}
+BestTimeIntent ideal conditions to do {Activity} in the {SpecifiedTime}
+BestTimeIntent ideal conditions for {Activity} in the {SpecifiedTime}

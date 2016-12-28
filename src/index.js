@@ -8,19 +8,20 @@ const WUNDERGROUND_APIKEY = "a173736c9f29eb5a"
 // Asynchronous Package
 var async = require('async');
 
+// Checking for items within array
 var includes = require('array-includes');
 
 // REST Client for Server API calls
 var Client = require("node-rest-client").Client;
 var client = new Client();
 
-
-// **** END OF MODULES ***** //
-
 // Set local time zone
 process.env.TZ = 'America/New York'
 
-// ALEXA STUFF
+
+// ********************* \\
+// **** ALEXA STUFF **** \\
+// ********************* \\
 
 /**
     Copyright 2014-2015 Amazon.com, Inc. or its affiliates. All Rights Reserved.
@@ -49,7 +50,8 @@ process.env.TZ = 'America/New York'
 /**
  * App ID for the skill
  */
-var APP_ID = undefined;//replace with 'amzn1.echo-sdk-ams.app.[your-unique-value-here]';
+var APP_ID = "amzn1.ask.skill.090d9ac8-0c6e-4a23-beda-02d049fc8a9c"
+;//replace with 'amzn1.echo-sdk-ams.app.[your-unique-value-here]';
 
 /**
  * The AlexaSkill prototype and helper functions
@@ -156,6 +158,9 @@ PACTSkill.prototype.intentHandlers = {
 };
 
 function handleBestTimeIntent(intent, session, response) {
+// Handles the BestTimeIntent recieved, and triggers the appropriate functions
+// Input: Intent, session, and response objects
+// Output: Calls the initiateActivityRequest function, which sends a response
     var speechText = "";
     var repromptText = "You can ask about the best time to perform outdoor activities.";
     
@@ -181,6 +186,10 @@ function handleBestTimeIntent(intent, session, response) {
         time = timeSlot.value.toLowerCase();
     }
     
+    console.log('Activity: ' + activity);
+    console.log("Day: " + day);
+    console.log('Time: ' + time);
+    
     initiateActivityRequest(activity, day, time, 18.352153, -70.575001, response);
 }
 
@@ -191,110 +200,34 @@ exports.handler = function (event, context) {
     skill.execute(event, context);
 };
 
-// End of Alexa specific stuff
-
-// ** SERVER REQUEST HANDLING ** \\
-
-function initiateActivityRequest(activity, date, timeOfDay, latitude, longitude, res) {    
+function initiateActivityRequest(activity, dayIntent, timeOfDayIntent, latitude, longitude, res) {
+// Initiates the request to find the best time for an activity
+// Input: Activity string, date intent string, timeOfDay intent string, coordinates, and response object
+// Output: Ultimately, sends a response to Alexa with best time(s)
+    
+    var timePreference = timeIntentToPreference(timeOfDayIntent);
+    var activityTypes = activityIntentToActivityTypes(activity);
+    
+    // If activity not specified or recognized, inform the user
+    if (activityTypes == null) {
+        res.tellWithCard("I could not recognize your activity. You said: " + activity, "PACT", "I could not recognize your activity. You said: " + activity);
+        return;
+    }
+    
+    // If day not specified, assume today
+    if (dayIntent == null)
+        dayIntent = "today";
+    
     async.waterfall([    
         function(callback) {
-            var weatherForecastURL = generateWeatherRequestURL(latitude, longitude, date);
+            var weatherForecastURL = generateWeatherRequestURL(latitude, longitude);
             callback(null, weatherForecastURL);
         },
         function(weatherForecastURL, callback) {
-            client.get(weatherForecastURL, function(data, response) {
-                var hourlyForecast = [];
-                if (response.statusCode == 403) {
-                    console.log('Wunderground API Authorization Failure');
-                    return
-                }
-
-                // Store all the fetched data
-                for (var i = 0; i < data.hourly_forecast.length; i++) {
-                    var forecast = {}
-                    forecast.temperature = data.hourly_forecast[i].temp.metric;
-                    forecast.feelsLike = data.hourly_forecast[i].feelslike.metric;
-
-                    forecast.heatIndex = data.hourly_forecast[i].heatindex.metric;
-                    forecast.windChill = data.hourly_forecast[i].windchill.metric;
-
-                    forecast.windSpeed = data.hourly_forecast[i].wspd.metric;
-                    forecast.humidity = data.hourly_forecast[i].humidity; // in percentage
-                    forecast.uvi = data.hourly_forecast[i].uvi; // ultra violet index
-                    forecast.qpf = data.hourly_forecast[i].qpf.metric; // quantitative precipitaiton forecast 
-                    forecast.dewpoint = data.hourly_forecast[i].dewpoint.metric;
-                    forecast.snow = data.hourly_forecast[i].snow.metric;
-                    forecast.mslp = data.hourly_forecast[i].mslp.metric;
-                    forecast.pop = data.hourly_forecast[i].pop;
-
-
-                    forecast.time = {
-                        seconds: data.hourly_forecast[i].FCTTIME.sec,
-                        minutes: data.hourly_forecast[i].FCTTIME.min,
-                        hours: data.hourly_forecast[i].FCTTIME.hour,
-                        monthday: data.hourly_forecast[i].FCTTIME.mday,
-                        year: data.hourly_forecast[i].FCTTIME.year,
-                        month: data.hourly_forecast[i].FCTTIME.mon,
-                        weekday: data.hourly_forecast[i].FCTTIME.weekday_name
-                    } 
-                    
-                    var dateObject = new Date();
-                    var todayDate = dateObject.getDate();           //gets the day of month
-                    var dayOfWeek = dateObject.getDay();            //gets the day of week 0-6
-                    var requestDate;
-
-                    //assigning day of week to each possible requested date string
-                    if(date == "tomorrow") {
-                        requestDate = (dayOfWeek + 1) % 7;
-                    }
-                    else if(date == "today") {
-                        requestDate = dayOfWeek;
-                    }
-                    else if(date == "Sunday") {
-                        requestDate = 0;
-                    }
-                    else if(date == "Monday") {
-                        requestDate = 1;
-                    }
-                    else if(date == "Tuesday") {
-                        requestDate = 2;
-                    }
-                    else if(date == "Wednesday") {
-                        requestDate = 3;
-                    }
-                    else if(date == "Thursday") {
-                        requestDate = 4;
-                    }
-                    else if(date == "Friday") {
-                        requestDate = 5;
-                    }
-                    else if(date == "Saturday") {
-                        requestDate = 6;
-                    }
-
-                    //calculating the date difference of the week 
-                    var dateDiff;
-                    if (requestDate != null) {
-                        // Find the difference b/w days
-                        dateDiff = requestDate - dayOfWeek;
-                        if (dateDiff < 0)
-                            dateDiff += 7;
-                    } else
-                        console.log("requestDate is null: line ~231");
-
-                    //calculating the day that the user wants to schedule an activity
-                    var newDate = dateDiff + todayDate;
-                    
-                    if (forecast.time.monthday == newDate)
-                        hourlyForecast.push(forecast);  
-                }
-
-                callback(null, hourlyForecast);
-            }); // finished fetching data
+            fetchWeatherData(weatherForecastURL, dayIntent, callback);
         },
         function(hourlyForecast, callback) {
-            var sortedForecast = rankAndSortForecast(hourlyForecast, activity, timeOfDay);
-            console.log(sortedForecast);
+            var sortedForecast = rankAndSortForecast(hourlyForecast, activityTypes, timePreference);
             callback(null, sortedForecast);
         },
         function(sortedForecast, callback) {
@@ -309,8 +242,16 @@ function initiateActivityRequest(activity, date, timeOfDay, latitude, longitude,
     });
 }
 
-// Send results to the Alexa via response object
 function sendTopResults(rankedResults, activity, res) {
+// Send results to the Alexa via response object
+// Input: Ranked results (forecasts), specified activity, and response object]
+// Output: Sends response to Alexa
+    
+    if (rankedResults.errorMessage) {
+        res.tellWithCard(rankedResults.errorMessage, "PACT", rankedResults.errorMessage);
+        return;
+    }
+    
     // Send X amount of results back to the watch
     var numOfResults = 3
     
@@ -340,18 +281,78 @@ function sendTopResults(rankedResults, activity, res) {
         
         response += hours + ":00 " + amPm + ' on ' + rankedResults[i].time.weekday;
         
-        if (i != numOfResults-1)
-            response += ' or ';
+        // If last object, do not add anything
+        if (i != numOfResults-1) {
+            // if second to last, add or
+            if (i == numOfResults-2) {
+                response += ' or ';
+            // otherwise, add comma
+            } else {
+                response+= ', ';
+            }
+        }
     }
     
     res.tellWithCard(response, "PACT", response);
 }
 
+// ***************************************** \\
+// **** SLOT INTENT to VALUE CONVERSION **** \\
+// ***************************************** \\
+
+// SLOT definitions
+var activities = require("./slot-definitions/activities.js");
+//var days = require("slot-definitions/days.js");
+
+function activityIntentToActivityTypes(activityIntent) {
+// Takes in the activity intent, and returns a known activity string value for it
+// Input: Activity intent input by user
+// Output: Known activity string value
+    var activity = null;
+    
+    if (activities[String(activityIntent)])
+        activity = activities[String(activityIntent)];
+    else
+        console.log("Illegal activity intent (slot) specified! : " + activityIntent);
+    
+    return activity;
+}
+
+var timesOfDay = require("./slot-definitions/times.js");
+
+function timeIntentToPreference(timeIntent) {
+// Takes in the time intent, and returns a number value for it
+// Input: Time intent input by user
+// Output: Time preference integer value (0-23)
+    var timePreference = null;
+    
+    if (timeIntent == null)
+        timeIntent = "now";
+    
+    if (timesOfDay[String(timeIntent)])
+        timePreference = timesOfDay[String(timeIntent)];
+    else
+        console.log("Illegal time of day intent (slot) specified! : " + timeIntent);
+    
+    return timePreference;
+}
+
+function dayIntentToDay(dayIntent) {
+// Takes in the specified day intent, and returns a known string value for it
+// Input: Day intent string input by user
+// Output: Program-known day string corresponding to intent
+    ;
+}
+
+
 // ************************************ \\
 // **** WUNDERGROUND Data Fetching **** \\
 // ************************************ \\
 
-function generateWeatherRequestURL(latitude, longitude, date) {
+function generateWeatherRequestURL(latitude, longitude) {
+// Generates weather request URL with coordinates
+// Input: Latitude and longitude floating point values
+// Output: Weather forecast URL string
     
    var weatherForecastURL = "http://api.wunderground.com/api/<APIKEY>/hourly10day/q/<LATITUDE>,<LONGITUDE>.json";
     
@@ -364,12 +365,109 @@ function generateWeatherRequestURL(latitude, longitude, date) {
     return weatherForecastURL;
 }
 
+function fetchWeatherData(weatherForecastURL, date, callback) {
+    client.get(weatherForecastURL, function(data, response) {
+        var hourlyForecast = [];
+        if (response.statusCode == 403) {
+            console.log('Wunderground API Authorization Failure');
+            callback("Wunderground API Auth Failure", null);
+        }
+
+        // Store all the fetched data
+        for (var i = 0; i < data.hourly_forecast.length; i++) {
+            var forecast = {}
+            forecast.temperature = data.hourly_forecast[i].temp.metric;
+            forecast.feelsLike = data.hourly_forecast[i].feelslike.metric;
+
+            forecast.heatIndex = data.hourly_forecast[i].heatindex.metric;
+            forecast.windChill = data.hourly_forecast[i].windchill.metric;
+
+            forecast.windSpeed = data.hourly_forecast[i].wspd.metric;
+            forecast.humidity = data.hourly_forecast[i].humidity; // in percentage
+            forecast.uvi = data.hourly_forecast[i].uvi; // ultra violet index
+            forecast.qpf = data.hourly_forecast[i].qpf.metric; // quantitative precipitaiton forecast 
+            forecast.dewpoint = data.hourly_forecast[i].dewpoint.metric;
+            forecast.snow = data.hourly_forecast[i].snow.metric;
+            forecast.mslp = data.hourly_forecast[i].mslp.metric;
+            forecast.pop = data.hourly_forecast[i].pop;
+
+            forecast.time = {
+                seconds: data.hourly_forecast[i].FCTTIME.sec,
+                minutes: data.hourly_forecast[i].FCTTIME.min,
+                hours: data.hourly_forecast[i].FCTTIME.hour,
+                monthday: data.hourly_forecast[i].FCTTIME.mday,
+                year: data.hourly_forecast[i].FCTTIME.year,
+                month: data.hourly_forecast[i].FCTTIME.mon,
+                weekday: data.hourly_forecast[i].FCTTIME.weekday_name
+            }
+
+            var dateObject = new Date();
+            var todayDate = dateObject.getDate();           //gets the day of month
+            var dayOfWeek = dateObject.getDay();            //gets the day of week 0-6
+            var requestDate;
+            
+
+            // assigning day of week to each possible requested date string
+            if (date == "tomorrow") {
+                requestDate = (dayOfWeek + 1) % 7;
+            }
+            else if (date == "today" || date == "Today") {
+                requestDate = dayOfWeek;
+            }
+            else if (date == "sunday" || date == "Sunday") {
+                requestDate = 0;
+            }
+            else if (date == "monday" || date == "Monday") {
+                requestDate = 1;
+            }
+            else if (date == "tuesday" || date == "Tuesday") {
+                requestDate = 2;
+            }
+            else if (date == "wednesday" || date == "Wednesday") {
+                requestDate = 3;
+            }
+            else if (date == "thursday" || date == "Thursday") {
+                requestDate = 4;
+            }
+            else if (date == "friday" || date == "Friday") {
+                requestDate = 5;
+            }
+            else if (date == "saturday" || date == "Saturday") {
+                requestDate = 6;
+            } else {
+                console.log("Error: Specified date not recognized");
+                return;
+            }
+
+            //calculating the date difference of the week 
+            var dateDiff;
+            if (requestDate != null) {
+                // Find the difference b/w days
+                dateDiff = requestDate - dayOfWeek;
+                if (dateDiff < 0)
+                    dateDiff += 7;
+            } else
+                console.log("requestDate is null: line ~231");
+
+            //calculating the day that the user wants to schedule an activity
+            var newDate = dateDiff + todayDate;
+
+            if (forecast.time.monthday == newDate)
+                hourlyForecast.push(forecast);  
+        }
+
+        callback(null, hourlyForecast);
+    }); // finished fetching data
+}
+
 // ***************************************** \\
 // **** RANKING and FORECASTING METHODS **** \\
 // ***************************************** \\
 
-// Define function to validate forecasts
 function validForecast(forecast) {
+// Validates forecast object 
+// Input: Forecast object
+// Output: Boolean value for validity
     // Assume forecast is valid 
     var returnValue = true;
 
@@ -384,36 +482,59 @@ function validForecast(forecast) {
     return returnValue;
 }
 
-function rankAndSortForecast(hourlyForecast, intent, timeOfDay) {
+function rankAndSortForecast(hourlyForecast, activityTypes, timeOfDay) {
+// Ranks and sorts all forecasts based on type of activity
+// Input: Hourly forecasts to rank and sort, types of activity array, and timePreference int (0-23)
+// Output: Ranked and sorted forecast array based on weighted sort
+
     // SUMMER
-    var sForecast = summerForecast(hourlyForecast, intent);
-    if (!validForecast(sForecast)) {
-       sForecast = hourlyForecast; // fill in with all original values
-    }
+    if (includes(activityTypes, "summer"))
+        hourlyForecast = summerForecast(hourlyForecast);
+    
+    // Check for errors
+    if (hourlyForecast.errorMessage)
+        return hourlyForecast;
 
     // WINTER
-    var wsForecast = winterForecast(sForecast, intent);
-    if (!validForecast(wsForecast)) {
-       wsForecast = sForecast; // fill in with all previous values
-    }
+    if (includes(activityTypes, "winter"))
+       hourlyForecast = winterForecast(hourlyForecast); // fill in with all previous values
 
-    // VISIBILITY
-    var vwsForecast = visibilityForecast(wsForecast, intent);
-    if (!validForecast(vwsForecast)) {
-       vwsForecast = wsForecast; // fill in with all previous values
-    }
+    // Check for errors
+    if (hourlyForecast.errorMessage)
+        return hourlyForecast;
     
-    // WIND
-    var wvwsForecast = windForecast(vwsForecast, intent);
+    // VISIBILITY
+    if (includes(activityTypes, "visibility"))
+        hourlyForecast = visibilityForecast(hourlyForecast);
+    
+    // Check for errors
+    if (hourlyForecast.errorMessage)
+        return hourlyForecast;
+    console.log("ActivityTypes: " + activityTypes);
+    console.log("Pre wind forecast: " + hourlyForecast);
+    // WIND (wind is always ranked since it is checked for extreme conditions on non-wind activities)
+    hourlyForecast = windForecast(hourlyForecast, activityTypes);
+    console.log("Post wind forecast: " + hourlyForecast);
+    
+    // Check for errors
+    if (hourlyForecast.errorMessage)
+        return hourlyForecast;
 
-    // TIME (Doesn''t need checking, always returns all elements)
-    var twvwsForecast = timeRank(wvwsForecast, timeOfDay);
+    // TIME 
+    hourlyForecast = timeRank(hourlyForecast, timeOfDay);
+    
+    // Check for errors
+    if (hourlyForecast.errorMessage)
+        return hourlyForecast;
 
     // Sort the forecasts with rankings and return
-    return sortThis(twvwsForecast);
+    return sortThis(hourlyForecast);
 }
 
 function sortThis(acceptableForecast) {
+// Sorts the forecasts based on the ranks specified
+// Input: Forecasts with rank properties
+// Output: Ranked forecasts based on weighted sorting
     
     acceptableForecast.sort(function(a,b) {
         var aRank = 0;
@@ -492,32 +613,14 @@ function sortThis(acceptableForecast) {
     return acceptableForecast;
 }
 
-function computeVisibility(forecast) {
-// Computes the visibility for the forecast
-    var milesVisibility = 0;
-    
-    // MSLP lower than 990 means 0.25mi visibility
-    if (forecast.mslp <= 990)
-        milesVisibility = 0.25
-        
-    // MSLP higher than 1016 hPA means 10mi visibility
-    else if (forecast.mslp >= 1016)
-        milesVisibility = 10;
-    
-    // Else, use weighted equations to calculate based on pressure, temp and dewpoint
-    else {
-        var visiblity1 = 0.45 * forecast.mslp - 447;
-        var visibility2 = 1.13 * (forecast.temperature - forecast.dewpoint) - 1.15;
-   
-        // Visibility in miles
-        milesVisibility = ((0.545 * visibility1) + (0.455 * visibility2));
-    }
-    // Return visibility in kilometers
-    return 1.60934 * milesVisibility;
-}
-
-function windForecast(forecastsToUse, intent) {
-    const BAD_WIND = "High winds all day. Maybe choose another activity."
+function windForecast(forecastsToUse, activityTypes) {
+// Eliminates all uneligible forecasts based on wind conditions and ranks the eligible
+// Input: Forecasts and activity types array
+// Output: Eligible forecasts with associated wind ranks array
+    const HIGH_WIND = "High wind speeds all day. The lowest is: ";
+    const LOW_WIND = "Low wind speeds all day. The highest is: ";
+    const BAD_WIND = "Unsuitable wind speeds: ";
+    const UNITS = " kilometers per hour";
     
     // For wind activities
     const IDEAL_WIND_SPEED = 25;
@@ -528,36 +631,39 @@ function windForecast(forecastsToUse, intent) {
     
     var windCheck = false;
     var acceptableForecast = [];
+    var lowestSpeed = 10000;
     
     // Check for good winds for wind activites
-    if (includes(intent, 'wind')) {
+    if (includes(activityTypes, 'wind')) {
+        console.log('checking (good) wind conditions');
         for (var i = 0; i < forecastsToUse.length; i++) {
             // Checking wind speed is between acceptable ranges
             if (forecastsToUse[i].windSpeed <= MAX_IDEAL_WIND_SPEED) {
                 if (forecastsToUse[i].windSpeed >= MIN_IDEAL_WIND_SPEED) {
                     windCheck = true;
-                    if (!includes(acceptableForecast, forecastsToUse[i]))
-                        acceptableForecast.push(forecastsToUse[i]);
+                    acceptableForecast.push(forecastsToUse[i]);
                 }
             }
+            if (forecastsToUse[i].windSpeed < lowestSpeed)
+                lowestSpeed = forecastsToUse[i].windSpeed;
         }
+        
     // Check for extreme winds
     } else {
+        console.log('checking (bad) extreme wind');
         for (var i = 0; i < forecastsToUse.length; i++) {
             if (forecastsToUse[i].windSpeed <= MAX_WIND_SPEED) {
                 windCheck = true;
-                if (!includes(acceptableForecast, forecastsToUse[i]))
-                    acceptableForecast.push(forecastsToUse[i]);
+                acceptableForecast.push(forecastsToUse[i]);
             }
+
+            if (forecastsToUse[i].windSpeed > lowestSpeed)
+                lowestSpeed = forecastsToUse[i].windSpeed;
         }
     }
     if (!windCheck) {
-        var result = []
-        var pebbleResult = {}
-        pebbleResult.time = -1
-        pebbleResult.timeString = BAD_WIND;
-        result.push(pebbleResult)
-        acceptableForecast = result
+        console.log(forecastsToUse);
+        return {"errorMessage": (BAD_WIND + lowestSpeed + UNITS)};
     } else {
         acceptableForecast = windRank(acceptableForecast);
     }
@@ -565,7 +671,10 @@ function windForecast(forecastsToUse, intent) {
     return acceptableForecast;
 }
 
-function windRank(acceptableForecast) {  
+function windRank(acceptableForecast) { 
+// Adds wind rank to all forecasts
+// Input: Forecasts with eligible wind conditions
+// Output: Forecasts with associated wind rank
     var windWeight = 1;
     const MAX_WIND_SPEED = 50;
 
@@ -581,38 +690,65 @@ function windRank(acceptableForecast) {
     return acceptableForecast;
 }
 
-function visibilityForecast(forecastsToUse, intent) {
-        const BAD_VISIBILITY = "Bad visibility all day. Maybe choose another activity."
+function computeVisibility(forecast) {
+// Computes the visibility for the forecast
+// Input: Forecast object
+// Output: Visibility in KM for the forecast
+    var milesVisibility = 0;
+    
+    // MSLP lower than 990 means 0.25mi visibility
+    if (forecast.mslp <= 990)
+        milesVisibility = 0.25
+        
+    // MSLP higher than 1016 hPA means 10mi visibility
+    else if (forecast.mslp >= 1016)
+        milesVisibility = 10;
+    
+    // Else, use weighted equations to calculate based on pressure, temp and dewpoint
+    else {
+        var visibility1 = 0.45 * forecast.mslp - 447;
+        var visibility2 = 1.13 * (forecast.temperature - forecast.dewpoint) - 1.15;
+   
+        // Visibility in miles
+        milesVisibility = ((0.545 * visibility1) + (0.455 * visibility2));
+    }
+    // Return visibility in kilometers
+    return 1.60934 * milesVisibility;
+}
+
+function visibilityForecast(forecastsToUse) {
+// Eliminates all uneligible forecasts and adds visiblity rank to those eligible
+// Input: Forecasts array to rank by visibility
+// Output: Visibility eligible forecasts with associated visibility rank
+        const BAD_VISIBILITY = "Bad visibility all day. Maybe choose another activity.";
         var visibilityCheck = false;
         var acceptableForecast = [];
-        
-        if (includes(intent, 'visibility')) {
-            // for sports that need good visibility
-            for (var i = 0; i < forecastsToUse.length; i++) {
-                // Check within acceptable time 
-                if (forecastsToUse[i].time.hours > 7 && forecastsToUse[i].time.hours <= 22) {
-                    // Compute visibility in miles
-                    forecastsToUse[i].visibility = computeVisibility(forecastsToUse[i]);
-                    if (forecastsToUse[i].visibility > 1){
-                        visibilityCheck = true;   
-                    }  
-                }   
-            }
-            if (!visibilityCheck){
-                var result = []
-                var pebbleResult = {}
-                pebbleResult.time = -1
-                pebbleResult.timeString = BAD_VISIBILITY;
-                result.push(pebbleResult)
-                acceptableForecast = result;
-            } else {
-                acceptableForecast = visibilityRank(acceptableForecast);
-            }
+
+        // for sports that need good visibility
+        for (var i = 0; i < forecastsToUse.length; i++) {
+            // Check within acceptable time 
+            if (forecastsToUse[i].time.hours > 7 && forecastsToUse[i].time.hours <= 22) {
+                // Compute visibility in miles
+                forecastsToUse[i].visibility = computeVisibility(forecastsToUse[i]);
+                if (forecastsToUse[i].visibility > 1){
+                    visibilityCheck = true;   
+                    acceptableForecast.push(forecastsToUse[i]);
+                }  
+            }   
         }
-        return acceptableForecast
+        if (!visibilityCheck){
+            return {"errorMessage": BAD_VISIBILITY};
+        } else {
+            acceptableForecast = visibilityRank(acceptableForecast);
+        }
+        
+    return acceptableForecast
 }
 
 function visibilityRank(acceptableForecast) {
+// Adds the visibility rank to all passed in forecasts
+// Input: Acceptable user forecasts for visibility related activities
+// Output: Forecasts with visibility rank
     var MIN_VISIBILITY_KMS = 1.5
     var visWeight = 1;
     // Calculate the weights utilized for the sort algorithm
@@ -629,7 +765,51 @@ function visibilityRank(acceptableForecast) {
     return acceptableForecast;
 }
 
+function winterForecast(hourlyForecast) {
+// Eliminates all uneligible forecasts and ranks the eligible for winter activities
+// Input: Hourly forecasts array
+// Output: Eligible forecasts from the ones passed in with embedded winter rank 
+        var NOSNOW = "Not Enough Snow"
+        var BAD_TEMP = "Temperature is not optimal for this activity today."
+        var snowCheck = false;
+        var tempCheck = false;
+        var acceptableForecast = []
+        
+        //consider temp, snow, snow probability, wind, windchill
+        for (var i = 0; i < hourlyForecast.length; i++) {
+            // Check within acceptable time 
+            if (hourlyForecast[i].time.hours > 7 && hourlyForecast[i].time.hours <= 22) {
+                //Check for acceptable cold temperature
+                if (hourlyForecast[i].temperature < 40 && hourlyForecast[i].temperature > 20){
+                    tempCheck = true;
+                    //Check for snowfall in mm
+                    // if (hourlyForecast[i].snow > 3) {
+                        snowCheck = true;
+                        // Check for wind chill
+                        if (hourlyForecast[i].feelsLike < 40 && hourlyForecast[i].feelsLike > 15) {
+                            acceptableForecast.push(hourlyForecast[i]);
+                        }   
+                    // }   
+                }   
+            }  
+        }
+
+        if (!snowCheck){
+            return {"errorMessage": NOSNOW};
+
+        } else if(!tempCheck){
+            return {"errorMessage": BAD_TEMP}
+        } else {
+            acceptableForecast = winterRank(acceptableForecast);
+        }
+        
+    return acceptableForecast
+}
+
 function winterRank(acceptableForecast) {
+// Adds the winter rank value to all passed in forecasts
+// Input: Acceptable user forecasts for winter activities
+// Output: Forecasts with associated winter rank
     var IDEAL_TEMP = -2;
     var MAX_TEMP_DIFFERENCE = 8
     
@@ -646,103 +826,47 @@ function winterRank(acceptableForecast) {
     return acceptableForecast;
 }
 
-function winterForecast(hourlyForecast, intent) {
-        var NOSNOW = "Not Enough Snow"
-        var BAD_TEMP = "Temperature is not optimal for this activity today."
-        var snowCheck = false;
-        var tempCheck = false;
-        var acceptableForecast = []
-        
-        if (includes(intent, 'winter')){
-            //consider temp, snow, snow probability, wind, windchill
-            for (var i = 0; i < hourlyForecast.length; i++) {
-                // Check within acceptable time 
-                if (hourlyForecast[i].time.hours > 7 && hourlyForecast[i].time.hours <= 22) {
-                    //Check for acceptable cold temperature
-                    if (hourlyForecast[i].temperature < 40 && hourlyForecast[i].temperature > 20){
-                        tempCheck = true;
-                        //Check for snowfall in mm
-                        // if (hourlyForecast[i].snow > 3) {
-                            snowCheck = true;
-                            // Check for wind chill
-                            if (hourlyForecast[i].feelsLike < 40 && hourlyForecast[i].feelsLike > 15) {
-                                acceptableForecast.push(hourlyForecast[i]);
-                            }   
-                        // }   
-                    }   
-                }  
-            }
-
-            if (!snowCheck){
-                var result = []
-                var pebbleResult = {}
-                pebbleResult.time = -1
-                pebbleResult.timeString = NOSNOW
-                result.push(pebbleResult)
-                acceptableForecast = result;
-                
-            } else if(!tempCheck){
-                var result = []
-                var pebbleResult = {}
-                pebbleResult.time = -1
-                pebbleResult.timeString = TEMP
-                result.push(pebbleResult)
-                acceptableForecast = result;
-            } else {
-                acceptableForecast = winterRank(acceptableForecast);
-            }
-        }
-    return acceptableForecast
-}
-
-function summerForecast(hourlyForecast, intent) {
+function summerForecast(hourlyForecast) {
+// Eliminates all uneligible forecasts and ranks all eligible for summer activities
+// Input: Hourly forecasts array
+// Output: Eligible forecasts from the ones passed in with embedded summer rank 
         var PRECIPITATION = "There is a high chance of precipitation all day."
         var TEMP = "Extreme temperatures all day long. Exercise with caution."
         var precipitationCheck = false; 
         var extremeTempCheck = false;
         var acceptableForecast = []
-        
-        if (includes(intent, 'summer')) {
-            
-            for (var i = 0; i < hourlyForecast.length; i++) {
-                // Check within acceptable time 
-                if (hourlyForecast[i].time.hours > 5 && hourlyForecast[i].time.hours <= 23) {
-                    // Check hours with no rain probablities
-                    if (hourlyForecast[i].pop < 35) {
-                        precipitationCheck = true;
-                        // Check temperature min and max
-                        if (hourlyForecast[i].temperature > 15 && hourlyForecast[i].temperature < 30) {
-                            extremeTempCheck = true;
-                            acceptableForecast.push(hourlyForecast[i])
-                        } 
-                    }
+
+        for (var i = 0; i < hourlyForecast.length; i++) {
+            // Check within acceptable time 
+            if (hourlyForecast[i].time.hours > 5 && hourlyForecast[i].time.hours <= 23) {
+                // Check hours with no rain probablities
+                if (hourlyForecast[i].pop < 35) {
+                    precipitationCheck = true;
+                    // Check temperature min and max
+                    if (hourlyForecast[i].temperature > 15 && hourlyForecast[i].temperature < 30) {
+                        extremeTempCheck = true;
+                        acceptableForecast.push(hourlyForecast[i])
+                    } 
                 }
             }
-            
-            if (!precipitationCheck){
-                var result = []
-                var pebbleResult = {}
-                pebbleResult.time = -1
-                pebbleResult.timeString = PRECIPITATION;
-                result.push(pebbleResult)
-                acceptableForecast = result;
-            }
-            else if (!extremeTempCheck){
-                var result = []
-                var pebbleResult = {}
-                pebbleResult.time = -1
-                pebbleResult.timeString = TEMP;
-                result.push(pebbleResult)
-                acceptableForecast = result;
-            } else {
-                acceptableForecast = summerRank(acceptableForecast);
-            }
+        }
+
+        if (!precipitationCheck){
+            return {"errorMessage": PRECIPITATION};
+        }
+        else if (!extremeTempCheck){
+            return {"errorMessage": TEMP};
+        } else {
+            acceptableForecast = summerRank(acceptableForecast);
         }
         
     return acceptableForecast;
 }
 
 function summerRank(acceptableForecast) {
+// Adds summer rank to all forecasts passed in
+// Input: Array of acceptable forecasts
+// Output: Same acceptable forecast array with added summer ranks for each
     const MAX_TEMP_DIFFERENCE = 12;
     const IDEAL_TEMP = 18;
     
@@ -753,10 +877,7 @@ function summerRank(acceptableForecast) {
         if (acceptableForecast[i].temperature <= IDEAL_TEMP + MAX_TEMP_DIFFERENCE)
             if (acceptableForecast[i].temperature >= IDEAL_TEMP - MAX_TEMP_DIFFERENCE)
                 tempWeight = 0.5 * (1 - (Math.abs(acceptableForecast[i].temperature - IDEAL_TEMP)/MAX_TEMP_DIFFERENCE));
-        
-        console.log('Temp: ' + tempWeight);
-        console.log('Rain: ' + rainWeight);
-            
+     
         acceptableForecast[i].summerRank = tempWeight + rainWeight;
         
         if (acceptableForecast[i].summerRank > 1)
@@ -765,14 +886,18 @@ function summerRank(acceptableForecast) {
     return acceptableForecast;
 }
 
+
 function timeRank(acceptableForecast, timePreference) {
+// Adds time rank to all forecasts passed in based on user time preference
+// Input: Array of forecasts, and time preference in integer (0-23)
+// Output: Same acceptable forecast array with added time ranks
     for (var i = 0; i < acceptableForecast.length; i++) {
         var timeWeight = 1 - (Math.abs(acceptableForecast[i].time.hours-timePreference)/24);
         acceptableForecast[i].timeRank = timeWeight;
-        console.log(timePreference + '  :  ' + timeWeight);
     }
     return acceptableForecast;
 }
+
 
 
 
