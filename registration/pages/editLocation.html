@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <meta charset="UTF-8">
+        <title>PACT</title>
+        
+        <!-- Bootstrap Core CSS -->
+        <link href="css/bootstrap.min.css" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link href="css/simple-sidebar.css" rel="stylesheet">
+
+        <!-- Custom Custom CSS -->
+        <link href="css/styles.css" rel="stylesheet">
+        
+    </head>
+
+    <body>
+        <div class="container">
+            <h1>Editing Location for PACT ID: </h1>
+            <form action='/editLocation' method='post'>
+                Latitude: <input type="text" id="latitudeField" name="latitude"/> <br>
+                Longitude: <input type="text" id="longitudeField" name="longitude"/> <br>
+                <input type="submit" id="submit-button" value="Save Changes"/> <br>
+            </form>
+            <button id="setLocationButton">Set Current Location</button>
+        </div>
+    </body>
+    
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script>
+        
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(setPosition, errorFindingLocation);
+            } else {
+                console.log("Geolocation is not supported by this browser.");
+            }
+        }
+        
+        function setPosition(position) {
+            document.getElementById("latitudeField").value = position.coords.latitude;
+            document.getElementById("longitudeField").value = position.coords.longitude;
+        }
+        
+        $(document).ready(function() {
+            
+            $("#setLocationButton").click(function(e) {
+                e.preventDefault();
+                getLocation();
+            });
+            
+            $.ajax({
+                url: "/location",
+//                dataType: "application/json",
+                success: function(result, status, xhr) {
+                    // Make sure data was returned
+                    if (result) {
+                        // Make sure valid location information was returned, and no failure authenticating
+                        if (result.failed) {
+                            console.log("Failed to authenticate");
+                            window.location = "/login";
+                        } else {
+                            $("#latitudeField").val(result.latitude);
+                            $("#longitudeField").val(result.longitude);
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</html>

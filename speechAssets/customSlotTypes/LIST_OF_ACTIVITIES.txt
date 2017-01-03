@@ -28,8 +28,8 @@ surfing
 surf
     
 sailing
-wind surfing
-kite surfing
+windsurfing
+kitesurfing
     
 skiing
 snowboarding

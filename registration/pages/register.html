@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <meta charset="UTF-8">
+        <title>PACT</title>
+        
+        <!-- Bootstrap Core CSS -->
+        <link href="css/bootstrap.min.css" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link href="css/simple-sidebar.css" rel="stylesheet">
+
+        <!-- Custom Custom CSS -->
+        <link href="css/styles.css" rel="stylesheet">
+        
+    </head>
+
+    <body>
+        <div class="container">
+            <h1>Welcome to the PACT Registration Page!</h1>
+            <p id="loc">Location must be loaded...</p>
+            <form action='/register' method='post'>
+                Google Email: <input type="text" name="email"/> <br>
+                Password: <input type="password" name="password"/> <br>
+                Confirm Password: <input type="password" name="confirmPassword"/> <br>
+                <input type="text" hidden="true" id="pactIDField" name="pactid"/> <br>
+                <input type="hidden" id="latitude" name="latitude" value="0"/>
+                <input type="hidden" id="longitude" name="longitude" value="0"/>
+                <input type="submit" disabled="true" id="submit-button" value="Register Calendar and Location"/> <br>
+            </form>
+        </div>
+    </body>
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+    
+    <script>
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(setPosition, errorFindingLocation);
+            } else {
+                console.log("Geolocation is not supported by this browser.");
+            }
+        }
+        
+        function setPosition(position) {
+            document.getElementById("latitude").value = position.coords.latitude;
+            document.getElementById("longitude").value = position.coords.longitude;
+            
+            document.getElementById("submit-button").disabled = false;
+            
+            document.getElementById("loc").innerHTML = "Location loaded successfully!";
+        }
+        
+        function errorFindingLocation(error) {
+            console.log(error);
+            document.getElementById("loc").innerHTML = "Location: " + error.message;
+
+        }
+        
+        // Get users location when document is loaded
+        $(document).ready(function(){
+            $.ajax({
+                url: "/genID",
+                success: function(result) {
+                    $("#pactIDField").val(result);
+                }
+            });
+            
+            getLocation();
+            
+        });
+    </script>
+</html>

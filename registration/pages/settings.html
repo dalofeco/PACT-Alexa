@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <meta charset="UTF-8">
+        <title>PACT</title>
+        
+        <!-- Bootstrap Core CSS -->
+        <link href="css/bootstrap.min.css" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link href="css/simple-sidebar.css" rel="stylesheet">
+
+        <!-- Custom Custom CSS -->
+        <link href="css/styles.css" rel="stylesheet">
+        
+    </head>
+
+    <body>
+        <div class="container">
+            <h1>Account Settings</h1>
+            <a href="/editLocation">Location Settings</a>
+            <a href="/editAccount">Account Settings</a>
+            <button id="deleteAccountButton">Delete Account</button>
+        </div>
+    </body>
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $("#deleteAccountButton").click(function(e) {
+                e.preventDefault();
+                if (confirm("Are you sure you want to delete your account?")) {
+                    window.location = "/delete";
+                } else
+                    alert("Not deleted");
+
+            })
+        });
+    </script>
+</html>

@@ -1,2 +1,9 @@
 src/node_modules
 src/*.zip
+registration/*.zip
+registration/token-secret.json
+registration/client_secret.json
+registration/store/clients/*
+registration/store/credentials/*
+registration/store/tokens/*
+

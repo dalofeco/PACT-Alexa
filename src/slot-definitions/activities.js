@@ -35,8 +35,8 @@ module.exports = {
     "surf": [SUMMER, WATER],
     
     "sailing": [SUMMER, WATER, WIND, VISIBILITY],
-    "wind surfing": [SUMMER, WATER, WIND, VISIBILITY],
-    "kite surfing": [SUMMER, WATER, WIND, VISIBILITY],
+    "windsurfing": [SUMMER, WATER, WIND, VISIBILITY],
+    "kitesurfing": [SUMMER, WATER, WIND, VISIBILITY],
     
     "skiing": [WINTER],
     "snowboarding": [WINTER],
