@@ -193,7 +193,7 @@ app.post('/login', function(req, res) {
                 email = email.toLowerCase();
 
                 // Authenticate user and redirect 
-                authenticateUser(email, password, function(success, authToken, pactID) {
+                authenticateUser(email, password, false, function(success, authToken, pactID) {
                     if (success) {
                         // Set expiry to fifteen minutes
                         var expiryTime = Date.now() + (COOKIE_EXPIRY_MINUTES * 60 * 1000);
@@ -465,10 +465,13 @@ function authenticateToken(pactID, token, callback) {
     }
 }
 
-function authenticateUser(email, password, callback) {
+function authenticateUser(email, password, alexa, callback) {
 // Authenticates user email and password combination, and stores auth token in user's cookie
     
     var filepath = generateCredentialsFilePath(email);
+    
+    if (!alexa)
+        alexa = false;
     
     // Verify file exists
     fs.stat(filepath, function(err, stats) {
@@ -493,7 +496,7 @@ function authenticateUser(email, password, callback) {
                         console.log(err);
                         callback(false, null, null);
                     } else if (isValid) {
-                        var authToken = generateAuthToken(obj.pactID);
+                        var authToken = generateAuthToken(obj.pactID, alexa);
                         callback(true, authToken, obj.pactID);
                     } else {
                         callback(false, null, null);
@@ -507,14 +510,20 @@ function authenticateUser(email, password, callback) {
     });
 }
 
-function generateAuthToken(pactID) {
+function generateAuthToken(pactID, alexa) {
 // Generates an auth token for pactID, stores it locally for future authentication, and returns the cookie value
     
     // Generate random string
     var authTokenString = randomString(30);
     
-    // Set expiry to 15 minutes (900 seconds [900000 ms])
-    var expiryTime = (Date.now() + (COOKIE_EXPIRY_MINUTES * 60 * 1000));
+    var expiryTime;
+    
+    if (alexa) {
+        expiryTime = Date.now() + (365 * 24 * 60 * 60 * 1000);
+    } else {
+        // Set expiry to 15 minutes (900 seconds [900000 ms])
+        expiryTime = (Date.now() + (COOKIE_EXPIRY_MINUTES * 60 * 1000));
+    }
     
     // Store authtoken
     var token = {
@@ -546,8 +555,82 @@ function generateAuthToken(pactID) {
      }
      
      return text;
-}       
+}   
 
+// ************************************************* \\
+// ********* ALEXA SKILL REGISTRATION ************** \\
+// ************************************************* \\
+
+app.get('/alexaLocation', function(req, res) {
+    if (req.query.authToken && validator.isAlphanumeric(req.query.authToken)) {
+        if (req.query.authToken.length == 46) {
+            var token = req.query.authToken.substr(0, 30);
+            var pactID = req.query.authToken.substr(30, 16);
+        
+            authenticateToken(pactID, token, function(success) {
+                if (success) {
+                    loadClient(pactID, function(client) {
+                        res.send(client.location);
+                    });
+                } else {
+                    console.log("/alexaLocation Authentication failed");
+                    res.send({failed:true});
+                }
+            });
+            
+        } else {
+            console.log("Token length incorrect");
+        }
+    } else {
+        console.log("Invalid token");
+    }
+});
+
+app.get('/alexaAuth', function(req, res) {
+    
+    res.sendFile(__dirname + "/pages/alexaLogin.html");
+    
+//    if (req.query.state && req.query.client_id && req.query.response_type && req.query.redirect_uri) {
+//        var state = req.query.state;
+//        var client_id = req.query.client_id;
+//        var response_type = req.query.response_type;
+//        var redirect_uri = req.query.redirect_uri;
+//        
+//        
+//    }
+    
+});
+
+app.post('/alexaAuth', function(req, res) {
+    
+    if (req.body.state && req.body.client_id && req.body.response_type && req.body.redirect_uri) {
+    
+        var state = req.body.state;
+        var client_id = req.body.client_id;
+        var response_type = req.body.response_type;
+        var redirect_uri = req.body.redirect_uri;
+
+        if (req.body.email && req.body.password) {
+            
+            // Validate email and password
+            if (validator.isEmail(req.body.email) && validator.isWhitelisted(req.body.email, EMAIL_WHITELIST)) {
+                if (validator.isWhitelisted(req.body.password)) {
+                    var email = req.body.email;
+                    var password = req.body.password;
+
+                    authenticateUser(email, password, true, function(success, authToken, pactID) {
+                        if (success) {
+                            var accessToken = authToken + pactID;
+                            res.redirect(redirect_uri + "?access_token=" + accessToken + "&state=" + state + "&token_type=token");
+                        } else {
+                            res.redirect('/alexaAuth?fail=true');
+                        }
+                    });
+                }
+            }
+        }
+    }    
+});
 
 // ************************************************ \\
 // ********** EVERTHING GOOGLE APIS *************** \\

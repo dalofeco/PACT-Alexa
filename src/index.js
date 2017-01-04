@@ -15,6 +15,9 @@ var includes = require('array-includes');
 var Client = require("node-rest-client").Client;
 var client = new Client();
 
+// Alexa SDK
+var Alexa = require("alexa-sdk");
+
 // Set local time zone
 process.env.TZ = 'America/New York'
 
@@ -112,7 +115,6 @@ PACTSkill.prototype.eventHandlers.onSessionEnded = function (sessionEndedRequest
 
 PACTSkill.prototype.intentHandlers = {
     "BestTimeIntent": function (intent, session, response) {
-        
         handleBestTimeIntent(intent, session, response);
     },
     "AMAZON.HelpIntent": function (intent, session, response) {
@@ -164,33 +166,59 @@ function handleBestTimeIntent(intent, session, response) {
     var speechText = "";
     var repromptText = "You can ask about the best time to perform outdoor activities.";
     
-    // Read user's desired activity from slot in intent
-    var activitySlot = intent.slots.Activity;
-    var activity = null;
-    if (activitySlot && activitySlot.value) {
-        activity = String(activitySlot.value.toLowerCase());
-    } else
-        console.log("Activity not specified properly");
-        
-    // Read user's desired day from slot in intent
-    var daySlot = intent.slots.SpecifiedDay;
-    var day = null;
-    if (daySlot && daySlot.value) {
-        day = daySlot.value.toLowerCase();
-    } 
+    var authToken = session.user.accessToken;
     
-    // Read user's desired time from slot in intent
-    var timeSlot = intent.slots.SpecifiedTime;
-    var time = null;
-    if (timeSlot && timeSlot.value) {
-        time = timeSlot.value.toLowerCase();
+    if (authToken == undefined) {
+        response.linkAccount();
+        //(':tellWithLinkAccountCard', 'to start using this skill, please register the location on the companion app to authenticate on Amazon');
+        return;
+    } else {
+        client.get('https://pact.dalofeco.com/locationAlexa?authToken=' + authToken, function(data, response) {
+            
+            if (data.failed) {
+                this.emit(':tellWithLinkAccountCard', 'Authentication failed. Register the location on companion app');
+                return;
+            }
+            
+            if (!data.latitude || !data.longitude) {
+                console.log("Latitude and/or Longitude not retrievable");
+                return;
+            }
+            
+            var latitude = data.latitude;
+            var longitude = data.longitude;
+            
+            // Read user's desired activity from slot in intent
+            var activitySlot = intent.slots.Activity;
+            var activity = null;
+            if (activitySlot && activitySlot.value) {
+                activity = String(activitySlot.value.toLowerCase());
+            } else
+                console.log("Activity not specified properly");
+
+            // Read user's desired day from slot in intent
+            var daySlot = intent.slots.SpecifiedDay;
+            var day = null;
+            if (daySlot && daySlot.value) {
+                day = daySlot.value.toLowerCase();
+            } 
+
+            // Read user's desired time from slot in intent
+            var timeSlot = intent.slots.SpecifiedTime;
+            var time = null;
+            if (timeSlot && timeSlot.value) {
+                time = timeSlot.value.toLowerCase();
+            }
+
+            console.log('Activity: ' + activity);
+            console.log("Day: " + day);
+            console.log('Time: ' + time);
+
+            initiateActivityRequest(activity, day, time, latitude, longitude, response);
+        });
     }
     
-    console.log('Activity: ' + activity);
-    console.log("Day: " + day);
-    console.log('Time: ' + time);
     
-    initiateActivityRequest(activity, day, time, 18.352153, -70.575001, response);
 }
 
 // Create the handler that responds to the Alexa Request.

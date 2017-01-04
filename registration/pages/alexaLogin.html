@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <meta charset="UTF-8">
+        <title>PACT</title>
+        
+        <!-- Bootstrap Core CSS -->
+        <link href="css/bootstrap.min.css" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link href="css/simple-sidebar.css" rel="stylesheet">
+
+        <!-- Custom Custom CSS -->
+        <link href="css/styles.css" rel="stylesheet">
+        
+        <!-- jQuery -->
+        <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+
+        
+    </head>
+
+    <body>
+        <div class="container">
+            <h1>Welcome to the PACT Login Page!</h1>
+            <form action='/alexaAuth' method='post'>
+                Email: <input type="text" name="email"/> <br>
+                Password: <input type="password" name="password"/> <br>
+                <input type=hidden name="state" id="state"/>
+                <input type=hidden name="client_id" id="client_id"/>
+                <input type=hidden name="redirect_uri" id="redirect_uri"/>
+                <input type=hidden name="response_type" id="response_type"/>
+                <input type="submit" id="submit-button" value="Login"/>
+                <button id="registerButton">Register</button><br>
+            </form>
+            <br>
+            <p id="failedLogin"></p>
+        </div>
+    </body>
+    
+    <script>
+        
+        // Read a page's GET URL variables and return them as an associative array.
+        function getUrlVars()
+        {
+            var vars = [], hash;
+            var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+            for(var i = 0; i < hashes.length; i++)
+            {
+                hash = hashes[i].split('=');
+                vars.push(hash[0]);
+                vars[hash[0]] = hash[1];
+            }
+            return vars;
+        }
+        
+        $(document).ready(function() {
+            $("#registerButton").click(function(e) {
+                e.preventDefault();
+                window.location = "/register";
+            });
+            
+            if (window.location.search === "?fail=true") {
+                document.getElementById("failedLogin").innerHTML = "Login failed!";
+            } else {
+                var vars = getUrlVars();
+                if (vars['state'] && vars['client_id'] && vars['redirect_uri'] && vars['response_type']) {
+                    document.getElementById("state").value = vars['state'];
+                    document.getElementById("client_id").value = vars['client_id'];
+                    document.getElementById("redirect_uri").value = vars['redirect_uri'];
+                    document.getElementById("response_type").value = vars['response_type'];
+                }
+            }
+        });
+        
+    </script>
+</html>
