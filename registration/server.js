@@ -736,6 +736,12 @@ function deleteDataForPactID(pactID) {
                     if (err)
                         console.log(err);
                 });
+                
+                // Delete auth token
+                fs.unlink(generateAuthTokenFilePath(pactID), function(err) {
+                    if (err)
+                        console.log(err);
+                });
 
                 console.log('Successfully deleted all data for ' + pactID + '(' + email + ')');
             });
