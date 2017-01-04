@@ -100,7 +100,7 @@
         
         $("#logoutLink").click(function(e) {
             e.preventDefault();
-            document.getElementById("page-content").src = "/logout";
+            window.location = "/logout";
         })
         
         $(document).ready(function() {

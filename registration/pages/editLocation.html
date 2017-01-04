@@ -44,6 +44,11 @@
             document.getElementById("longitudeField").value = position.coords.longitude;
         }
         
+        function errorFindingLocation(error) {
+            console.log(error);
+            document.getElementById("loc").innerHTML = "Location: " + error.message;
+        }
+        
         $(document).ready(function() {
             
             $("#setLocationButton").click(function(e) {

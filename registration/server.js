@@ -35,6 +35,9 @@ var bodyParser = require("body-parser");
 const COOKIE_SIGN_SECRET = JSON.parse(fs.readFileSync(__dirname + "/token-secret.json")).secret;
 const COOKIE_EXPIRY_MINUTES = 15;
 
+const EMAIL_WHITELIST = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890@._";
+const PASSWORD_WHITELIST = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890@._+,!#$%&()";
+
 // ****************************** //
 // ***** EXPRESS MIDDLEWARE ***** //
 // ****************************** //
@@ -144,13 +147,13 @@ app.get('/logout', function(req, res) {
             if (success) {
                 logout(pactID);
             }
-            res.clearCookie('token');
-            res.clearCookie('pactID');
+            res.cookie('token', '', {expires: new Date(0)});
+            res.cookie('pactID', '', {expires: new Date(0)});
+            
+            res.redirect("/");
         });
     } else
         console.log("Not logged in to logout");
-    
-    res.redirect("/login");
 });
 
 app.get('/success', function(req, res) {
@@ -159,19 +162,46 @@ app.get('/success', function(req, res) {
 
 
 app.post('/login', function(req, res) {
-    // Get parameters
-    var email = req.body.email;
-    var password = req.body.password;
-    
-    // Validate inputs
-    if (validator.isEmail(email) && !validator.isEmpty(password)) {
-        
-        // Convert to lower case
-        email = email.toLowerCase();
-        
-        // Authenticate user and redirect 
-        authenticateUser(email, password, req, res);
-    }
+
+    // Make sure both parameters are specified
+    if (req.body.email && req.body.password) {
+
+        // Get parameters
+        var email = req.body.email;
+        var password = req.body.password;
+
+        // Validate EMAIL
+        if (validator.isEmail(email) && validator.isWhitelisted(email, EMAIL_WHITELIST)) {
+            
+            // Validate password
+            if (validator.isWhitelisted(password, PASSWORD_WHITELIST)) {
+
+                // Convert to lower case
+                email = email.toLowerCase();
+
+                // Authenticate user and redirect 
+                authenticateUser(email, password, function(success, authToken, pactID) {
+                    if (success) {
+                        // Set expiry to fifteen minutes
+                        var expiryTime = Date.now() + (COOKIE_EXPIRY_MINUTES * 60 * 1000)
+                        // Generate and set auth token as cookie for valid login
+                        res.cookie('token', authToken, {signed: true, secure: true, expiry: new Date(expiryTime)});
+                        res.cookie('pactID', pactID, {signed: true, secure: true, expiry: new Date(expiryTime)});
+
+                        res.redirect("/settings");
+                    } else
+                        res.redirect("/login?fail=true")
+                });
+            } else {
+                res.redirect("/login?fail=true");
+                console.log("Illegal characters in password");
+            }
+        } else {
+            res.redirect("/login?fail=true");
+            console.log("Illegal characters in email");
+        }
+    } else
+        res.redirect("/login?fail=true");
 })
 
 // Handle user request to register form information
@@ -187,11 +217,14 @@ app.post('/register', function(req, res) {
     if (email && pactID && password && latitude && longitude) {
 
         // Validate all input fields
-        if (!validator.isEmail(email)) {
+        if (!validator.isEmail(email) || !validator.isWhitelisted(email, EMAIL_WHITELIST)) {
             res.send("Invalid email!");
             return;
-        } if (validator.isEmpty(password) || validator.isEmpty(confirmPassword)) {
-            res.send("Invalid password!");
+        } if (!validator.isWhitelisted(password, PASSWORD_WHITELIST) || !validator.isWhitelisted(confirmPassword, PASSWORD_WHITELIST)) {
+            res.send("Illegal characters in password!");
+            return;
+        } if (password.length < 7) {
+            res.send("Password too short! It must be at least 7 characters long!");
             return;
         } if (!validator.isAlphanumeric(pactID)) {
             res.send("Invalid pactID");
@@ -200,14 +233,14 @@ app.post('/register', function(req, res) {
             res.send("Invalid coordinates");
             return;
         } if (password != confirmPassword) {
-            res.send("Password mismatch.");
+            res.redirect("/register?fail=true");
             return;
         }
 
         email = email.toLowerCase();
 
         if (latitude == 0 || longitude == 0) {
-            res.redirect('/register');
+            res.redirect('/register?fail=true');
             return;
         }
 
@@ -226,12 +259,23 @@ app.post('/register', function(req, res) {
                 res.send("Invalid ID!");
         });
     } else
-        res.send('Missing parameter!');
+        res.send('Missing field!');
 });
 
 app.get('/settings', function(req, res) {
     if (req.signedCookies.token && req.signedCookies.pactID) {
-        res.sendFile(__dirname + "/pages/settings.html");
+        
+        // Validate token and pact id cookies
+        if (validator.isAlphanumeric(req.signedCookies.token) && validator.isAlphanumeric(req.signedCookies.pactID)) {
+
+            authenticateToken(req.signedCookies.pactID, req.signedCookies.token, function(success, pactID) {
+                if (success)
+                    res.sendFile(__dirname + "/pages/settings.html");
+                else
+                    res.redirect('/login');
+            });
+        } else
+            res.send("Chill out with those illegal cookies...");
     } else
         res.redirect("/login");
 })
@@ -246,13 +290,13 @@ app.post('/editLocation', function(req, res) {
         
         // Validate all cookie fields
         if (!validator.isAlphanumeric(req.signedCookies.token)) {
-            res.send("Illegal token!");
+            res.send("Chill out with that illegal token!");
             return;
         } if (!validator.isAlphanumeric(req.signedCookies.pactID)) {
-            res.send("Illegal pactID!");
+            res.send("Chill out with that illegal pactID!");
             return;
         } if (!validator.isDecimal(req.body.latitude) || !validator.isDecimal(req.body.longitude)) {
-            res.send("Illegal coordinates!");
+            res.send("Yeah... those are NOT valid coordinates!");
             return;
         }
         
@@ -270,8 +314,8 @@ app.post('/editLocation', function(req, res) {
                 }); 
             } else {
                 // Failed to authenticate, redirect to login and clear cookies
-                res.clearCookie('token');
-                res.clearCookie('pactID');
+                res.cookie('token', '', {expires: new Date(0)});
+                res.cookie('pactID', '', {expires: new Date(0)});
                 res.redirect('/login');
             }
         });
@@ -387,20 +431,22 @@ function authenticateToken(pactID, token, callback) {
         callback(false, null);
 }
 
-function authenticateUser(email, password, req, res) {
+function authenticateUser(email, password, callback) {
 // Authenticates user email and password combination, and stores auth token in user's cookie
     
     var filepath = generateCredentialsFilePath(email);
     
     // Verify file exists
     fs.stat(filepath, function(err, stats) {
+        // If no error, file exists
         if (err == null) {
     
             // Read file
             fs.readFile(filepath, function(err, obj) {
-
                 if (err) {
                     console.log("Could not read file: " + filepath + ". Error: " + err);
+                    // Unsuccessful (login) callback
+                    callback(false, null, null);
                     return;
                 }
 
@@ -411,23 +457,17 @@ function authenticateUser(email, password, req, res) {
                 pw.verify(obj.password, password, function(err, isValid) {
                     if (err) {
                         console.log(err);
-                        return;
+                        callback(false, null, null);
                     } else if (isValid) {
-                        // Set expiry to fifteen minutes
-                        var expiryTime = Date.now() + (COOKIE_EXPIRY_MINUTES * 60 * 1000)
                         var authToken = generateAuthToken(obj.pactID);
-                        // Generate and set auth token as cookie for valid login
-                        res.cookie('token', authToken, {signed: true, secure: true, expiry: expiryTime});
-                        res.cookie('pactID', obj.pactID, {signed: true, secure: true, expiry: expiryTime});
-
-                        res.redirect("/settings");
+                        callback(true, authToken, obj.pactID)
                     } else
-                        res.send("Invalid login");
+                        callback(false, null, null);
                 });
             });
         } else
-        // File does not exists (user not registered)
-        res.redirect("/register");
+            // File does not exists (user not registered)
+            callback(false, null, null);
     });
 }
 
@@ -454,6 +494,8 @@ function generateAuthToken(pactID) {
         if (err) {
             console.log(err);
             return;
+        } else {
+            console.log("Successfully saved token: " + token + " to " + filepath);
         }
     });
     
@@ -617,19 +659,26 @@ function getClientPactIdAndStore(oauth2Client, token, res) {
         }
         else {
             var email = response.emails[0].value;
-            var pactID = NEW_CLIENTS[email].pactID;
-            var longitude = NEW_CLIENTS[email].longitude;
-            var latitude = NEW_CLIENTS[email].latitude;
             
-            // Save credentials
-            storeCredentials(NEW_CLIENTS[email]);
-            
-            delete NEW_CLIENTS[email]; // delete pending registering user once it is processed
-            
-            if (pactID == null)
-                console.log("Couldn't retrieve local pact id from NEW_CLIENTS")
-            else
-                storeToken(token, pactID, email, latitude, longitude, res);
+            // Make sure email matches the original one
+            if (NEW_CLIENTS[email]) {
+                var pactID = NEW_CLIENTS[email].pactID;
+                var longitude = NEW_CLIENTS[email].longitude;
+                var latitude = NEW_CLIENTS[email].latitude;
+
+                // Save credentials
+                storeCredentials(NEW_CLIENTS[email]);
+
+                delete NEW_CLIENTS[email]; // delete pending registering user once it is processed
+
+                if (pactID == null)
+                    console.log("Couldn't retrieve local pact id from NEW_CLIENTS")
+                else
+                    storeToken(token, pactID, email, latitude, longitude, res);
+            } else {
+                delete NEW_CLIENTS[email];
+                res.send("Error: mismatching emails...<br>If the Google log-in screen did not show up, try using Icognito mode, or signing out of the active Google account session.");
+            }
         }
     });
 }
@@ -734,12 +783,12 @@ app.get('/list', function(req, res) {
     if (req.signedCookies.pactID && req.signedCookies.token) {      
         // Validate PACT ID
         if (!validator.isAlphanumeric(req.signedCookies.pactID)) {
-            res.send("Illegal PACT ID");
+            res.send("Chill out with that illegal PACT ID");
             return;
         }
         // Validate token
         if (!validator.isAlphanumeric(req.signedCookies.pactID)) {
-            res.send("Illegal token!");
+            res.send("Chill out with that illegal token!");
             return;
         }
         
@@ -748,8 +797,8 @@ app.get('/list', function(req, res) {
                 getTokenForPact(pactID, fetchEvents, pactID);
             else {
                 // Redirect and clear cookies (failed login)
-                res.clearCookie('token');
-                res.clearCookie('pactID');
+                res.cookie('token', '', {expires: new Date(0)});
+                res.cookie('pactID', '', {expires: new Date(0)});
                 res.redirect("/login");
             }
         });
@@ -788,8 +837,8 @@ app.get('/location', function(req, res) {
             // Failed to authenticate token
             } else {
                 console.log("Login failed");
-                res.clearCookie('pactID');
-                res.clearCookie('token');
+                res.cookie('pactID', '', {expires: new Date(0)});
+                res.cookie('token', '', {expires: new Date(0)});
                 res.send({failed: true});
                 return;
             }
@@ -803,12 +852,12 @@ app.get('/delete', function(req, res) {
         
         // Validate PACT ID
         if (!validator.isAlphanumeric(req.signedCookies.pactID)) {
-            res.send("Illegal PACT ID");
+            res.send("Chill out with that illegal PACT ID!");
             return;
         }
         // Validate token
         if (!validator.isAlphanumeric(req.signedCookies.pactID)) {
-            res.send("Illegal token!");
+            res.send("Chill out with that illegal token!");
             return;
         }
         
@@ -817,11 +866,12 @@ app.get('/delete', function(req, res) {
             if (success) {
                 // Delete 
                 deleteDataForPactID(pactID);
+                res.redirect("/success");
             } else
                 res.redirect("/login");
             // Delete cookies
-            res.clearCookie('token');
-            res.clearCookie('pactID');
+            res.cookie('token', '', {expires: new Date(0)});
+            res.cookie('pactID', '', {expires: new Date(0)});
         });
         
     } else

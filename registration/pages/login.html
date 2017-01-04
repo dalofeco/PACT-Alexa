@@ -14,6 +14,10 @@
         <!-- Custom Custom CSS -->
         <link href="css/styles.css" rel="stylesheet">
         
+        <!-- jQuery -->
+        <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+
+        
     </head>
 
     <body>
@@ -22,8 +26,25 @@
             <form action='/login' method='post'>
                 Email: <input type="text" name="email"/> <br>
                 Password: <input type="password" name="password"/> <br>
-                <input type="submit" id="submit-button" value="Login"/> <br>
+                <input type="submit" id="submit-button" value="Login"/>
+                <button id="registerButton">Register</button><br>
             </form>
+            <br>
+            <p id="failedLogin"></p>
         </div>
     </body>
+    
+    <script>
+        $(document).ready(function() {
+            $("#registerButton").click(function(e) {
+                e.preventDefault();
+                window.location = "/register";
+            });
+            
+            if (window.location.search === "?fail=true") {
+                document.getElementById("failedLogin").innerHTML = "Login failed!";
+            }
+        });
+        
+    </script>
 </html>
