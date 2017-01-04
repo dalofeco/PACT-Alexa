@@ -1,3 +1,6 @@
+// Strict accessing
+"use strict";
+
 // ************************ \\
 // ******* MODULES ******** \\
 // ************************ \\
@@ -38,13 +41,15 @@ const COOKIE_EXPIRY_MINUTES = 15;
 const EMAIL_WHITELIST = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890@._";
 const PASSWORD_WHITELIST = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890@._+,!#$%&()";
 
+
+
 // ****************************** //
 // ***** EXPRESS MIDDLEWARE ***** //
 // ****************************** //
 
 // Parse url encoded parameters automatically
 app.use(bodyParser.urlencoded({
-    extended: false,
+    extended: false
 }));
 
 // Cookie parsing
@@ -65,16 +70,19 @@ app.use('/js', express.static('js'));
 // Load client info from file store
 function loadClient(pactID, callback) {
     var filepath = generateClientFilePath(pactID);
-    
+
     fs.stat(filepath, function(err, stats) {
         if (err === null) {
             fs.readFile(filepath, function(err, data) {
                 if (err) {
-                    console.log(err)
+                    console.log(err);
                     return;
-                } else if (data != '')
+                } else if (data != '') {
                     callback(JSON.parse(data));
+                }
             });
+        } else {
+            console.log("Client for pactID" + pactID + " does not exist");
         }
     });
 }
@@ -84,17 +92,18 @@ function saveClient(client) {
     var filepath = generateClientFilePath(client.pactID);
     
     fs.writeFile(filepath, JSON.stringify(client), function(err) {
-        if (err)
+        if (err) {
             console.log(err);
-        else 
+        } else {
             console.log('Saved: ' + filepath + ' successfully!');
+        }
     });
 }
 
 // To store new registering clients
-var NEW_CLIENTS = {}
+var NEW_CLIENTS = {};
 // To store generated ids awaiting Google API connecition
-var PENDING_IDS = []
+var PENDING_IDS = [];
 
 
 // Provide access to genereate unique id for registration
@@ -109,18 +118,21 @@ function generateNewPactID() {
 // Input: response object from user http request
 // Output: unique pact ID string
     var again = true;
-        
+    var newID;
+    var filepath;    
+    
     while(again) { // To make sure no duplicate ID is generated
-        var newID = Math.random().toString(36).substr(2, 16);
+        newID = Math.random().toString(36).substr(2, 16);
         
         // Generate filepath for new ID
-        var filepath = generateClientFilePath(newID);
+        filepath = generateClientFilePath(newID);
         
         // Make sure ID is not taken making sure file does not exist
-        if (fs.existsSync(filepath))
+        if (fs.existsSync(filepath)) {
             again = true;
-        else 
+        } else {
             again = false;
+        }
     }
     PENDING_IDS.push(newID);
     
@@ -152,8 +164,9 @@ app.get('/logout', function(req, res) {
             
             res.redirect("/");
         });
-    } else
+    } else {
         console.log("Not logged in to logout");
+    }
 });
 
 app.get('/success', function(req, res) {
@@ -183,14 +196,15 @@ app.post('/login', function(req, res) {
                 authenticateUser(email, password, function(success, authToken, pactID) {
                     if (success) {
                         // Set expiry to fifteen minutes
-                        var expiryTime = Date.now() + (COOKIE_EXPIRY_MINUTES * 60 * 1000)
+                        var expiryTime = Date.now() + (COOKIE_EXPIRY_MINUTES * 60 * 1000);
                         // Generate and set auth token as cookie for valid login
                         res.cookie('token', authToken, {signed: true, secure: true, expiry: new Date(expiryTime)});
                         res.cookie('pactID', pactID, {signed: true, secure: true, expiry: new Date(expiryTime)});
 
                         res.redirect("/settings");
-                    } else
-                        res.redirect("/login?fail=true")
+                    } else {
+                        res.redirect("/login?fail=true");
+                    }
                 });
             } else {
                 res.redirect("/login?fail=true");
@@ -200,9 +214,10 @@ app.post('/login', function(req, res) {
             res.redirect("/login?fail=true");
             console.log("Illegal characters in email");
         }
-    } else
+    } else {
         res.redirect("/login?fail=true");
-})
+    }
+});
 
 // Handle user request to register form information
 app.post('/register', function(req, res) {
@@ -239,12 +254,15 @@ app.post('/register', function(req, res) {
 
         email = email.toLowerCase();
 
-        if (latitude == 0 || longitude == 0) {
+        if (latitude === 0 || longitude === 0) {
             res.redirect('/register?fail=true');
             return;
         }
 
         pw.hash(password, function(err, hash) {
+            if (err) {
+                console.log("Error hashing password: " + err);
+            }
             if (includes(PENDING_IDS, pactID)) {
                 NEW_CLIENTS[email] = {email: email, 
                                       pactID: pactID, 
@@ -255,11 +273,13 @@ app.post('/register', function(req, res) {
 
                 registerTokenForPact(pactID, res);
                 delete PENDING_IDS[pactID];
-            } else
+            } else {
                 res.send("Invalid ID!");
+            }
         });
-    } else
+    } else {
         res.send('Missing field!');
+    }
 });
 
 app.get('/settings', function(req, res) {
@@ -269,16 +289,20 @@ app.get('/settings', function(req, res) {
         if (validator.isAlphanumeric(req.signedCookies.token) && validator.isAlphanumeric(req.signedCookies.pactID)) {
 
             authenticateToken(req.signedCookies.pactID, req.signedCookies.token, function(success, pactID) {
-                if (success)
+                if (success) {
                     res.sendFile(__dirname + "/pages/settings.html");
-                else
+                }
+                else {
                     res.redirect('/login');
+                }
             });
-        } else
+        } else {
             res.send("Chill out with those illegal cookies...");
-    } else
+        }
+    } else {
         res.redirect("/login");
-})
+    }
+});
 
 app.get('/editLocation', function(req, res) {
     res.sendFile(__dirname + "/pages/editLocation.html");
@@ -319,9 +343,11 @@ app.post('/editLocation', function(req, res) {
                 res.redirect('/login');
             }
         });
-    } else
+    } else {
+    // Missing parameters or cookie not set
         res.redirect('/login');
-})
+    }
+});
 
 
 // ************************************************ \\
@@ -333,20 +359,22 @@ function storeCredentials(client) {
         email: client.email,
         password: client.password,
         pactID: client.pactID
-    }
+    };
     
     var filepath = generateCredentialsFilePath(client.email);
     
     // Make sure file does not already exist (email not registered already)
     fs.stat(filepath, function(err, stats) {
-        if (err.code == 'ENOENT') {
+        if (err.code === 'ENOENT') {
             // Write object to file
             fs.writeFile(filepath, JSON.stringify(userCredentials), function(err) {
-                if (err)
+                if (err) {
                     console.log("Could not write file: " + filepath + ". Error: " + err);
+                }
             });
-        } else
+        } else {
             console.log("Email already exists.");
+        }
     });
         
 }
@@ -357,9 +385,12 @@ function logout(pactID) {
     fs.stat(filepath, function(err, stats) {
         if (err == null) {
             fs.unlink(filepath, function(err) {
-                if (err)
+                if (err) {
                     console.log("Could not delete token: " + filepath + ". Error: " + err);
+                }
             });
+        } else {
+            console.log("Client file for pactID: " + pactID + " does not exist");
         }
     });
 }
@@ -388,10 +419,10 @@ function authenticateToken(pactID, token, callback) {
                     console.log('Loaded Token ID: ' + tokenObj.id);
 
                     console.log("TokenExpiry: " + tokenObj.expires);
-                    console.log("CurrentTime: " + Date.now())
+                    console.log("CurrentTime: " + Date.now());
 
                     // Validate stored token and ID match the ones in cookie
-                    if (tokenObj.value == token && tokenObj.id == pactID) {
+                    if (tokenObj.value === token && tokenObj.id === pactID) {
 
                         if (tokenObj.expires+1 > Date.now() + 1) {
 
@@ -402,8 +433,9 @@ function authenticateToken(pactID, token, callback) {
                             console.log("Token is expired");
                             // Delete token file (it is expired)
                             fs.unlink(filename, function(err) {
-                                if (err)
+                                if (err) {
                                     console.log("Could not delete token: " + filename + ". Error: " + err);
+                                }
                             });
                             // Callback with false login
                             callback(false, pactID);
@@ -413,8 +445,9 @@ function authenticateToken(pactID, token, callback) {
                         console.log("Token mismatch");
                         // If login invalid, delete token file
                         fs.unlink(filename, function(err) {
-                            if (err)
+                            if (err) {
                                 console.log("Could not delete token: " + filename + ". Error: " + err);
+                            }
                         });
                         // Re-direct to login page
                         callback(false, pactID);
@@ -426,9 +459,10 @@ function authenticateToken(pactID, token, callback) {
                 callback(false, pactID);
             }
         });
-    } else
+    } else {
         // Cookie not provided, redirect to login
         callback(false, null);
+    }
 }
 
 function authenticateUser(email, password, callback) {
@@ -460,14 +494,16 @@ function authenticateUser(email, password, callback) {
                         callback(false, null, null);
                     } else if (isValid) {
                         var authToken = generateAuthToken(obj.pactID);
-                        callback(true, authToken, obj.pactID)
-                    } else
+                        callback(true, authToken, obj.pactID);
+                    } else {
                         callback(false, null, null);
+                    }
                 });
             });
-        } else
+        } else {
             // File does not exists (user not registered)
             callback(false, null, null);
+        }
     });
 }
 
@@ -475,17 +511,17 @@ function generateAuthToken(pactID) {
 // Generates an auth token for pactID, stores it locally for future authentication, and returns the cookie value
     
     // Generate random string
-    authTokenString = randomString(30);
+    var authTokenString = randomString(30);
     
     // Set expiry to 15 minutes (900 seconds [900000 ms])
     var expiryTime = (Date.now() + (COOKIE_EXPIRY_MINUTES * 60 * 1000));
     
     // Store authtoken
-    token = {
+    var token = {
         id: pactID,
         expires: expiryTime, // value in milliseconds (Unix Epoch Time)
         value: authTokenString
-    }
+    };
     
     var filepath = generateAuthTokenFilePath(pactID);
     
@@ -493,7 +529,6 @@ function generateAuthToken(pactID) {
     fs.writeFile(filepath, JSON.stringify(token), function(err) {
         if (err) {
             console.log(err);
-            return;
         } else {
             console.log("Successfully saved token: " + token + " to " + filepath);
         }
@@ -503,12 +538,14 @@ function generateAuthToken(pactID) {
 }
 
  function randomString(length) {
-    var text = "";
-    var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    for(var i = 0; i < length; i++) {
+     var text = "";
+     var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+     var i;
+     for (i = 0; i < length; i++) {
         text += possible.charAt(Math.floor(Math.random() * possible.length));
-    }
-    return text;
+     }
+     
+     return text;
 }       
 
 
@@ -526,7 +563,8 @@ var GOOGLE_API_SCOPES = ['https://www.googleapis.com/auth/calendar',
 app.get('/googleAuth', function(req, res) {
     //res.sendFile(__dirname + '/success.html')
     var code = req.query.code;
-    console.log("This must be validated: GoogleAuth code: " + code)
+    console.log("This must be validated: GoogleAuth code: " + code);
+    
     if (code) {
 
         // Load client secrets from a local file.
@@ -583,8 +621,7 @@ function register(credentials, token_path, res) {
     fs.readFile(token_path, function(err, token) {
         if (err) {
             generateNewToken(oauth2Client, res);
-        }
-        else {
+        } else {
             oauth2Client.credentials = JSON.parse(token);
             console.log("User already registered!");
         }
@@ -606,18 +643,20 @@ function getTokenForPact(pactID, callback, param) {
     
     // Load client secrets from a local file.
     fs.readFile('client_secret.json', function processClientSecrets(err, content) {
-    if (err) {
-        console.log('Error loading client secret file: ' + err);
-        return;
-    }
-        
-    // Authorize a client with the loaded credentials, then call the callback
-    if (param)
-        authorize(JSON.parse(content), callback, token_path, pactID, param);
-    else
-        authorize(JSON.parse(content), callback, token_path, pactID);
+        if (err) {
+            console.log('Error loading client secret file: ' + err);
+            return;
+        }
+
+        // Authorize a client with the loaded credentials, then call the callback
+        if (param) {
+            authorize(JSON.parse(content), callback, token_path, pactID, param);
+        } else {
+            authorize(JSON.parse(content), callback, token_path, pactID);
+        }
     });
 }
+
 /**
  * Create an OAuth2 client with the given credentials, and then execute the
  * given callback function.
@@ -635,13 +674,14 @@ function authorize(credentials, callback, token_path, pactID, param) {
     // Check if we have previously stored a token.
     fs.readFile(token_path, function(err, token) {
         if (err) {
-            console.log("User must register first!")
+            console.log("User must register first!");
         } else {
             oauth2Client.credentials = JSON.parse(token);
-            if (param)
+            if (param) {
                 callback(oauth2Client, param);
-            else
+            } else {
                 callback(oauth2Client);
+            }
         }
     });
 }
@@ -651,13 +691,12 @@ function getClientPactIdAndStore(oauth2Client, token, res) {
     var request = plus.people.get({
         'userId' : 'me',
         'fields': 'emails',
-        'auth': oauth2Client,
+        'auth': oauth2Client
     }, function(err, response) {
         if (err) {
-            console.log(err)
-            return
-        }
-        else {
+            console.log(err);
+            return;
+        } else {
             var email = response.emails[0].value;
             
             // Make sure email matches the original one
@@ -671,10 +710,11 @@ function getClientPactIdAndStore(oauth2Client, token, res) {
 
                 delete NEW_CLIENTS[email]; // delete pending registering user once it is processed
 
-                if (pactID == null)
-                    console.log("Couldn't retrieve local pact id from NEW_CLIENTS")
-                else
+                if (pactID == null) {
+                    console.log("Couldn't retrieve local pact id from NEW_CLIENTS");
+                } else {
                     storeToken(token, pactID, email, latitude, longitude, res);
+                }
             } else {
                 delete NEW_CLIENTS[email];
                 res.send("Error: mismatching emails...<br>If the Google log-in screen did not show up, try using Icognito mode, or signing out of the active Google account session.");
@@ -721,26 +761,30 @@ function deleteDataForPactID(pactID) {
 
                 // Delete client file
                 fs.unlink(clientfilepath, function(err) {
-                    if (err)
+                    if (err) {
                         console.log(err);
+                    }
                 });
 
                 // Delete google token
                 fs.unlink(generateGoogleTokenPath(pactID), function(err) {
-                    if (err)
+                    if (err) {
                         console.log(err);
+                    }
                 });
 
                 // Delete credential file
                 fs.unlink(generateCredentialsFilePath(email), function(err) {
-                    if (err)
+                    if (err) {
                         console.log(err);
+                    }
                 });
                 
                 // Delete auth token
                 fs.unlink(generateAuthTokenFilePath(pactID), function(err) {
-                    if (err)
+                    if (err) {
                         console.log(err);
+                    }
                 });
 
                 console.log('Successfully deleted all data for ' + pactID + '(' + email + ')');
@@ -760,7 +804,7 @@ function storeToken(token, pactID, email, latitude, longitude, res) {
    fs.stat(token_path, function(err, stats) {
        if (err === null) {
            console.log("Token for pact ID: " + pactID + " already exists!");
-           return
+           return;
         }
    });
     
@@ -775,7 +819,7 @@ function storeToken(token, pactID, email, latitude, longitude, res) {
                   'email': email,
                   'location': {'latitude': latitude,
                                'longitude': longitude}
-                 }
+                 };
                     
     saveClient(client);
     
@@ -799,9 +843,9 @@ app.get('/list', function(req, res) {
         }
         
         authenticateToken(req.signedCookies.pactID, req.signedCookies.token, function(success, pactID) {   
-            if (success)
+            if (success) {
                 getTokenForPact(pactID, fetchEvents, pactID);
-            else {
+            } else {
                 // Redirect and clear cookies (failed login)
                 res.cookie('token', '', {expires: new Date(0)});
                 res.cookie('pactID', '', {expires: new Date(0)});
@@ -809,8 +853,9 @@ app.get('/list', function(req, res) {
             }
         });
         
-    } else
+    } else {
         res.redirect("/login");
+    }
 });
 
 app.get('/location', function(req, res) {
@@ -849,8 +894,9 @@ app.get('/location', function(req, res) {
                 return;
             }
         });
-    } else
+    } else {
         res.send({failed: true});
+    }
 });
 
 app.get('/delete', function(req, res) {
@@ -873,23 +919,25 @@ app.get('/delete', function(req, res) {
                 // Delete 
                 deleteDataForPactID(pactID);
                 res.redirect("/success");
-            } else
+            } else {
                 res.redirect("/login");
+            }
             // Delete cookies
             res.cookie('token', '', {expires: new Date(0)});
             res.cookie('pactID', '', {expires: new Date(0)});
         });
         
-    } else
+    } else {
         // Cookies not set, redirect to login page
         res.redirect("/login");
-})
+    }
+});
 
 function getUserSchedule(pactID) {
     // If pactID's calendar was updated more than fifteen minutes ago
-    if ((new Date().getTime() - CLIENTS[pactID].updateTime) > (900 * 1000)) {
+    if ((Date.now() - CLIENTS[pactID].updateTime) > (900 * 1000)) {
         // get user schedule and store it to CLIENTS[pactID].schedule[]
-        getTokenForPact(pactID, fetchEvents, pactID)
+        getTokenForPact(pactID, fetchEvents, pactID);
     }
 }
 
@@ -916,13 +964,16 @@ function fetchEvents(auth, pactID) {
             console.log('No upcoming events found.');
         } else {
             console.log('Upcoming 10 events:');
-            for (var i = 0; i < events.length; i++) {
+            
+            var i;
+            for (i = 0; i < events.length; i++) {
                 var event = {
                     'start': events[i].start.dateTime,
                     'end': events[i].end.dateTime,
                     'title': events[i].summary,
                     'timeZone': events[i].start.timeZone
-                }
+                };
+                
                 CLIENTS[pactID].schedule.push(event);
             }
             console.log(CLIENTS[pactID]);
@@ -939,11 +990,11 @@ function createEvent(auth, eventDetails) {
         'description': eventDetails.description,
         'start': {
             'dateTime': eventDetails.startTime, //'2015-05-28T09:00:00-07:00',
-            'timeZone': eventDetails.timeZone, //'America/Los_Angeles',
+            'timeZone': eventDetails.timeZone //'America/Los_Angeles',
         },
         'end': {
             'dateTime': eventDetails.endTime,
-            'timeZone': eventDetails.timeZone,
+            'timeZone': eventDetails.timeZone
         },
         // 'recurrence': ['RRULE:FREQ=DAILY;COUNT=2'],
         //'attendees': [ 
@@ -954,15 +1005,15 @@ function createEvent(auth, eventDetails) {
             'useDefault': false,
             'overrides': [
                 {'method': 'email', 'minutes': 30},
-                {'method': 'popup', 'minutes': 20},
-            ],
-        },
+                {'method': 'popup', 'minutes': 20}
+            ]
+        }
     };
     
     calendar.events.insert({
       auth: auth,
       calendarId: 'primary',
-      resource: event,
+      resource: event
     }, function(err, event) {
       if (err) {
         console.log('There was an error contacting the Calendar service: ' + err);
@@ -978,11 +1029,11 @@ function createEvent(auth, eventDetails) {
 
 // Open up the server to listen for incoming connections
 var server = app.listen(process.env.PORT || '8080', '0.0.0.0', function() {
-    if(process.env.PORT){
-        console.log('https://www.pact.dalofeco.com');
+    if (process.env.PORT) {
+        console.log('Server started at: https://www.pact.dalofeco.com');
+        console.log(new Date());
     } else {
         console.log('App listening at http://%s:%s', server.address().address, server.address().port);
+        console.log(new Date());
     }
 });
-
-
