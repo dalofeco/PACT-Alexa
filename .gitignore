@@ -1,9 +1,11 @@
 src/node_modules
 src/*.zip
+src/secrets.json
 registration/node_modules
 registration/*.zip
 registration/token-secret.json
 registration/client_secret.json
+registration/redirect-uri.json
 registration/store/clients/*
 registration/store/credentials/*
 registration/store/tokens/*

@@ -2,9 +2,6 @@
 // ******* MODULES ******** \\
 // ************************ \\
 
-// API Keys
-const WUNDERGROUND_APIKEY = "a173736c9f29eb5a"
-
 // Asynchronous Package
 var async = require('async');
 
@@ -15,166 +12,73 @@ var includes = require('array-includes');
 var Client = require("node-rest-client").Client;
 var client = new Client();
 
-// Alexa SDK
-var Alexa = require("alexa-sdk");
-
 // Set local time zone
 process.env.TZ = 'America/New York'
 
+// FS for file I/O
+var fs = require('fs');
+
+// ************************ \\
+// ****** CONSTANTS ******* \\
+// ************************ \\
+
+// WUNDERGROUND API Key
+const WUNDERGROUND_APIKEY = JSON.parse(fs.readFileSync(__dirname + "api-keys.json")).WUNDERGROUND;
 
 // ********************* \\
 // **** ALEXA STUFF **** \\
 // ********************* \\
 
-/**
-    Copyright 2014-2015 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-    Licensed under the Apache License, Version 2.0 (the "License"). You may not use this file except in compliance with the License. A copy of the License is located at
-        http://aws.amazon.com/apache2.0/
-    or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
-*/
+// Alexa SDK
+var Alexa = require("alexa-sdk");
 
-/**
- * This sample shows how to create a Lambda function for handling Alexa Skill requests that:
- *
- * - Session State: Handles a multi-turn dialog model.
- * - Custom slot type: demonstrates using custom slot types to handle a finite set of known values
- * - SSML: Using SSML tags to control how Alexa renders the text-to-speech.
- *
- * Examples:
- * Dialog model:
- *  User: "Alexa, ask Wise Guy to tell me a knock knock joke."
- *  Alexa: "Knock knock"
- *  User: "Who's there?"
- *  Alexa: "<phrase>"
- *  User: "<phrase> who"
- *  Alexa: "<Punchline>"
- */
-
-/**
- * App ID for the skill
- */
-var APP_ID = "amzn1.ask.skill.090d9ac8-0c6e-4a23-beda-02d049fc8a9c"
-;//replace with 'amzn1.echo-sdk-ams.app.[your-unique-value-here]';
-
-/**
- * The AlexaSkill prototype and helper functions
- */
-var AlexaSkill = require('./AlexaSkill');
-
-/**
- * WiseGuySkill is a child of AlexaSkill.
- * To read more about inheritance in JavaScript, see the link below.
- *
- * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Introduction_to_Object-Oriented_JavaScript#Inheritance
- */
-var PACTSkill = function () {
-    AlexaSkill.call(this, APP_ID);
-};
-
-// Extend AlexaSkill
-PACTSkill.prototype = Object.create(AlexaSkill.prototype);
-PACTSkill.prototype.constructor = PACTSkill;
-
-/**
- * Overriden to show that a subclass can override this function to initialize session state.
- */
-PACTSkill.prototype.eventHandlers.onSessionStarted = function (sessionStartedRequest, session) {
-    console.log("onSessionStarted requestId: " + sessionStartedRequest.requestId
-        + ", sessionId: " + session.sessionId);
+exports.handler = function(event, context, callback){
+    var alexa = Alexa.handler(event, context);
+    alexa.appId = "amzn1.ask.skill.090d9ac8-0c6e-4a23-beda-02d049fc8a9c";
     
-    console.log('Session request: ' + sessionStartedRequest);
-    console.log('Session: ' + session);        
-
-    // Any session init logic would go here.
-};
-
-/**
- * If the user launches without specifying an intent, route to the correct function.
- */
-PACTSkill.prototype.eventHandlers.onLaunch = function (launchRequest, session, response) {
-    console.log("WiseGuySkill onLaunch requestId: " + launchRequest.requestId + ", sessionId: " + session.sessionId);
+    var handlers = {
+        'BestTimeIntent': handleBestTimeIntent,
+        'AMAZON.HelpIntent': handleAmazonHelpIntent,
+        'AMAZON.StopIntent': handleAmazonStopIntent,
+        'AMAZON.CancelIntent': handleAmazonCancelIntent,
+        'Unhandled': handleUnhandledIntent  
+    };
     
-    console.log('Launch request: ' + launchRequest);
-    console.log('Session: ' + session);
-    console.log('Response: ' + response);
-
+    alexa.registerHandlers(handlers);
+    alexa.execute();
 };
 
-/**
- * Overriden to show that a subclass can override this function to teardown session state.
- */
-PACTSkill.prototype.eventHandlers.onSessionEnded = function (sessionEndedRequest, session) {
-    console.log("onSessionEnded requestId: " + sessionEndedRequest.requestId
-        + ", sessionId: " + session.sessionId);
-    
-    console.log('Session request: ' + sessionStartedRequest);
-    console.log('Session: ' + session);
+function handleAmazonHelpIntent() {
+    this.emit(':ask', 'You can ask for the best time to perform outdoor activities, and I will find the best conditions for it! Ask ahead!');
+}
 
-    //Any session cleanup logic would go here.
-};
+function handleAmazonStopIntent() {
+    this.emit(":tell", "Until next time!");
+}
 
-PACTSkill.prototype.intentHandlers = {
-    "BestTimeIntent": function (intent, session, response) {
-        handleBestTimeIntent(intent, session, response);
-    },
-    "AMAZON.HelpIntent": function (intent, session, response) {
-        var speechText = "";
+function handle AmazonCancelIntent() {
+    this.emit(":tell", "Cancled!");
+}
 
-        switch (session.attributes.stage) {
-            case 0:
-                speechText = "Knock knock jokes are a fun call and response type of joke. " +
-                    "To start the joke, just ask by saying tell me a joke, or you can say exit.";
-                break;
-            case 1:
-                speechText = "You can ask, who's there, or you can say exit.";
-                break;
-            case 2:
-                speechText = "You can ask, who, or you can say exit.";
-                break;
-            default:
-                speechText = "Knock knock jokes are a fun call and response type of joke. " +
-                    "To start the joke, just ask by saying tell me a joke, or you can say exit.";
-        }
+function handleUnhandledIntent() {
+    this.emit(':ask', 'Sorry, I could not understand your request. What did you say?');
+}
 
-        var speechOutput = {
-            speech: speechText,
-            type: AlexaSkill.speechOutputType.PLAIN_TEXT
-        };
-        var repromptOutput = {
-            speech: speechText,
-            type: AlexaSkill.speechOutputType.PLAIN_TEXT
-        };
-        // For the repromptText, play the speechOutput again
-        response.ask(speechOutput, repromptOutput);
-    },
-
-    "AMAZON.StopIntent": function (intent, session, response) {
-        var speechOutput = "Goodbye";
-        response.tell(speechOutput);
-    },
-
-    "AMAZON.CancelIntent": function (intent, session, response) {
-        var speechOutput = "Goodbye";
-        response.tell(speechOutput);
-    }
-};
-
-function handleBestTimeIntent(intent, session, response) {
+function handleBestTimeIntent() {
 // Handles the BestTimeIntent recieved, and triggers the appropriate functions
-// Input: Intent, session, and response objects
 // Output: Calls the initiateActivityRequest function, which sends a response
     var speechText = "";
     var repromptText = "You can ask about the best time to perform outdoor activities.";
     
-    var authToken = session.user.accessToken;
-    
+    var authToken = this.event.session.user.accessToken;
+      
     if (authToken == undefined) {
-        response.linkAccount();
-        //(':tellWithLinkAccountCard', 'to start using this skill, please register the location on the companion app to authenticate on Amazon');
+        this.emit(':tellWithLinkAccountCard', 'To start using this skill, please register your location on the companion app to authenticate on Amazon');
         return;
     } else {
-        client.get('https://pact.dalofeco.com/locationAlexa?authToken=' + authToken, function(data, response) {
-            
+
+        client.get('https://pact.dalofeco.com/alexaLocation?authToken=' + authToken, function(data, response) {
+     
             if (data.failed) {
                 this.emit(':tellWithLinkAccountCard', 'Authentication failed. Register the location on companion app');
                 return;
@@ -189,23 +93,27 @@ function handleBestTimeIntent(intent, session, response) {
             var longitude = data.longitude;
             
             // Read user's desired activity from slot in intent
-            var activitySlot = intent.slots.Activity;
+            var activitySlot = this.event.request.intent.slots.Activity;
             var activity = null;
+            
             if (activitySlot && activitySlot.value) {
                 activity = String(activitySlot.value.toLowerCase());
-            } else
+            } else {
                 console.log("Activity not specified properly");
+            }
 
             // Read user's desired day from slot in intent
-            var daySlot = intent.slots.SpecifiedDay;
+            var daySlot = this.event.request.intent.slots.SpecifiedDay;
             var day = null;
+            
             if (daySlot && daySlot.value) {
                 day = daySlot.value.toLowerCase();
             } 
 
             // Read user's desired time from slot in intent
-            var timeSlot = intent.slots.SpecifiedTime;
+            var timeSlot = this.event.request.intent.slots.SpecifiedTime;
             var time = null;
+            
             if (timeSlot && timeSlot.value) {
                 time = timeSlot.value.toLowerCase();
             }
@@ -213,70 +121,66 @@ function handleBestTimeIntent(intent, session, response) {
             console.log('Activity: ' + activity);
             console.log("Day: " + day);
             console.log('Time: ' + time);
-
-            initiateActivityRequest(activity, day, time, latitude, longitude, response);
-        });
+            
+            initiateActivityRequest.bind(this)(activity, day, time, latitude, longitude);
+        }.bind(this));
     }
-    
-    
 }
 
-// Create the handler that responds to the Alexa Request.
-exports.handler = function (event, context) {
-    // Create an instance of the PACT Skill.
-    var skill = new PACTSkill();
-    skill.execute(event, context);
-};
 
-function initiateActivityRequest(activity, dayIntent, timeOfDayIntent, latitude, longitude, res) {
+
+function initiateActivityRequest(activity, dayIntent, timeOfDayIntent, latitude, longitude) {
 // Initiates the request to find the best time for an activity
 // Input: Activity string, date intent string, timeOfDay intent string, coordinates, and response object
 // Output: Ultimately, sends a response to Alexa with best time(s)
     
     var timePreference = timeIntentToPreference(timeOfDayIntent);
     var activityTypes = activityIntentToActivityTypes(activity);
-    
+        
     // If activity not specified or recognized, inform the user
     if (activityTypes == null) {
-        res.tellWithCard("I could not recognize your activity. You said: " + activity, "PACT", "I could not recognize your activity. You said: " + activity);
+        this.emit(":tell", "I could not recognize your activity.", "PACT", "I could not recognize your activity.");
         return;
     }
     
     // If day not specified, assume today
-    if (dayIntent == null)
+    if (dayIntent == null) {
         dayIntent = "today";
-    
+    }
+        
     async.waterfall([    
         function(callback) {
             var weatherForecastURL = generateWeatherRequestURL(latitude, longitude);
             callback(null, weatherForecastURL);
-        },
+        }.bind(this),
         function(weatherForecastURL, callback) {
             fetchWeatherData(weatherForecastURL, dayIntent, callback);
-        },
+        }.bind(this),
         function(hourlyForecast, callback) {
             var sortedForecast = rankAndSortForecast(hourlyForecast, activityTypes, timePreference);
             callback(null, sortedForecast);
-        },
+        }.bind(this),
         function(sortedForecast, callback) {
-            sendTopResults(sortedForecast, activity, res);
+            sendTopResults.bind(this)(sortedForecast, activity);
             callback(null, 'Success!');
-        }
+        }.bind(this)
     ], function(err, result) {
         if (err)
             console.log(err);
         else
             console.log(result);
-    });
+    }.bind(this));
 }
 
-function sendTopResults(rankedResults, activity, res) {
+function sendTopResults(rankedResults, activity) {
 // Send results to the Alexa via response object
 // Input: Ranked results (forecasts), specified activity, and response object]
 // Output: Sends response to Alexa
     
+    console.log(this);
+    
     if (rankedResults.errorMessage) {
-        res.tellWithCard(rankedResults.errorMessage, "PACT", rankedResults.errorMessage);
+        this.emit(":tellWithCard", rankedResults.errorMessage, "PACT", rankedResults.errorMessage, null);
         return;
     }
     
@@ -321,7 +225,7 @@ function sendTopResults(rankedResults, activity, res) {
         }
     }
     
-    res.tellWithCard(response, "PACT", response);
+    this.emit(":tellWithCard", response, "PACT", response, null);
 }
 
 // ***************************************** \\

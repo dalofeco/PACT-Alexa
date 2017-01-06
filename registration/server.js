@@ -37,6 +37,7 @@ var bodyParser = require("body-parser");
 
 const COOKIE_SIGN_SECRET = JSON.parse(fs.readFileSync(__dirname + "/token-secret.json")).secret;
 const COOKIE_EXPIRY_MINUTES = 15;
+const REDIRECT_URI = JSON.parse(fs.readFileSync(__dirname + "/redirect-uri.json")).redirect;
 
 const EMAIL_WHITELIST = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890@._";
 const PASSWORD_WHITELIST = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890@._+,!#$%&()";
@@ -155,7 +156,7 @@ app.get('/login', function(req, res) {
 app.get('/logout', function(req, res) {
     // Callback only gets executed if successfully authenticated
     if (req.signedCookies.pactID && req.signedCookies.token) {
-        authenticateToken(req.signedCookies.pactID, req.signedCookies.token, function(success, pactID) {
+        authenticateToken(req.signedCookies.pactID, req.signedCookies.token, false, function(success, pactID) {
             if (success) {
                 logout(pactID);
             }
@@ -288,7 +289,7 @@ app.get('/settings', function(req, res) {
         // Validate token and pact id cookies
         if (validator.isAlphanumeric(req.signedCookies.token) && validator.isAlphanumeric(req.signedCookies.pactID)) {
 
-            authenticateToken(req.signedCookies.pactID, req.signedCookies.token, function(success, pactID) {
+            authenticateToken(req.signedCookies.pactID, req.signedCookies.token, false, function(success, pactID) {
                 if (success) {
                     res.sendFile(__dirname + "/pages/settings.html");
                 }
@@ -325,7 +326,7 @@ app.post('/editLocation', function(req, res) {
         }
         
         // If token is authenticated
-        authenticateToken(req.signedCookies.pactID, req.signedCookies.token, function(success, pactID) {
+        authenticateToken(req.signedCookies.pactID, req.signedCookies.token, false, function(success, pactID) {
             if (success) {
                 loadClient(pactID, function(client) {
                     client.location.latitude = req.body.latitude;
@@ -380,7 +381,7 @@ function storeCredentials(client) {
 }
 
 function logout(pactID) {
-    var filepath = generateAuthTokenFilePath(pactID);
+    var filepath = generateAuthTokenFilePath(pactID, false);
     // Make sure file exists
     fs.stat(filepath, function(err, stats) {
         if (err == null) {
@@ -395,13 +396,13 @@ function logout(pactID) {
     });
 }
 
-function authenticateToken(pactID, token, callback) {
+function authenticateToken(pactID, token, alexa, callback) {
     
     // Make sure both parameters are not null
     if (token && pactID) {
         console.log("Token Cookie: " + token);
 
-        var filename = generateAuthTokenFilePath(pactID);
+        var filename = generateAuthTokenFilePath(pactID, alexa);
         fs.stat(filename, function(err, stats) {
             
             // If file exists
@@ -424,7 +425,7 @@ function authenticateToken(pactID, token, callback) {
                     // Validate stored token and ID match the ones in cookie
                     if (tokenObj.value === token && tokenObj.id === pactID) {
 
-                        if (tokenObj.expires+1 > Date.now() + 1) {
+                        if (tokenObj.expires + 1 > Date.now() + 1) {
 
                             // Callback function success and pactID as parameter
                             callback(true, pactID);
@@ -519,6 +520,7 @@ function generateAuthToken(pactID, alexa) {
     var expiryTime;
     
     if (alexa) {
+        // Set expiry time for a year for alexa device tokens
         expiryTime = Date.now() + (365 * 24 * 60 * 60 * 1000);
     } else {
         // Set expiry to 15 minutes (900 seconds [900000 ms])
@@ -532,7 +534,8 @@ function generateAuthToken(pactID, alexa) {
         value: authTokenString
     };
     
-    var filepath = generateAuthTokenFilePath(pactID);
+    // Generates a file path different for alexa file path
+    var filepath = generateAuthTokenFilePath(pactID, alexa);
     
     // Add token to store
     fs.writeFile(filepath, JSON.stringify(token), function(err) {
@@ -567,13 +570,13 @@ app.get('/alexaLocation', function(req, res) {
             var token = req.query.authToken.substr(0, 30);
             var pactID = req.query.authToken.substr(30, 16);
         
-            authenticateToken(pactID, token, function(success) {
+            authenticateToken(pactID, token, true, function(success) {
                 if (success) {
                     loadClient(pactID, function(client) {
                         res.send(client.location);
                     });
                 } else {
-                    console.log("/alexaLocation Authentication failed");
+                    console.log("/alexaLocation authentication failed");
                     res.send({failed:true});
                 }
             });
@@ -587,47 +590,50 @@ app.get('/alexaLocation', function(req, res) {
 });
 
 app.get('/alexaAuth', function(req, res) {
-    
     res.sendFile(__dirname + "/pages/alexaLogin.html");
-    
-//    if (req.query.state && req.query.client_id && req.query.response_type && req.query.redirect_uri) {
-//        var state = req.query.state;
-//        var client_id = req.query.client_id;
-//        var response_type = req.query.response_type;
-//        var redirect_uri = req.query.redirect_uri;
-//        
-//        
-//    }
-    
 });
 
 app.post('/alexaAuth', function(req, res) {
     
     if (req.body.state && req.body.client_id && req.body.response_type && req.body.redirect_uri) {
-    
-        var state = req.body.state;
-        var client_id = req.body.client_id;
-        var response_type = req.body.response_type;
-        var redirect_uri = req.body.redirect_uri;
-
-        if (req.body.email && req.body.password) {
+        
+        // Make sure request comes from alexa skill (amazon servers)
+        if (req.body.client_id === "pact-alexa-skill-y385f17eah175g0613") {
+        
+            var state = req.body.state;
+            var response_type = req.body.response_type;
             
-            // Validate email and password
-            if (validator.isEmail(req.body.email) && validator.isWhitelisted(req.body.email, EMAIL_WHITELIST)) {
-                if (validator.isWhitelisted(req.body.password)) {
-                    var email = req.body.email;
-                    var password = req.body.password;
+            // Redirect uri not currently used
+            var redirect_uri = req.body.redirect_uri;
 
-                    authenticateUser(email, password, true, function(success, authToken, pactID) {
-                        if (success) {
-                            var accessToken = authToken + pactID;
-                            res.redirect(redirect_uri + "?access_token=" + accessToken + "&state=" + state + "&token_type=token");
-                        } else {
-                            res.redirect('/alexaAuth?fail=true');
-                        }
-                    });
+            // Make sure email and password included in request
+            if (req.body.email && req.body.password) {
+
+                // Validate email and password
+                if (validator.isEmail(req.body.email) && validator.isWhitelisted(req.body.email, EMAIL_WHITELIST)) {
+                    if (validator.isWhitelisted(req.body.password, PASSWORD_WHITELIST)) {
+                        var email = req.body.email;
+                        var password = req.body.password;
+
+                        authenticateUser(email, password, true, function(success, authToken, pactID) {
+                            if (success) {
+                                var accessToken = authToken + pactID;
+                                res.redirect(REDIRECT_URI + "#access_token=" + accessToken + "&state=" + state + "&token_type=bearer");
+                            } else {
+                                res.redirect('/alexaAuth?fail=true');
+                            }
+                        });
+                    } else {
+                        res.send("Illegal password");
+                    }
+                } else {
+                    res.send("Illegal email");
                 }
+            } else {
+                res.send("Missing email/password parameters");
             }
+        } else {
+            res.send("Illegal client id");
         }
     }    
 });
@@ -818,8 +824,12 @@ function generateCredentialsFilePath(email) {
      return __dirname + "/store/credentials/" + String(email) + '.json';
 }
 
-function generateAuthTokenFilePath(pactID) {
-    return __dirname + "/store/tokens/" + String(pactID) + ".json";
+function generateAuthTokenFilePath(pactID, alexa) {
+    if (alexa) {
+        return __dirname + "/store/tokens/" + String(pactID) + "-alexa.json";
+    } else {
+        return __dirname + "/store/tokens/" + String(pactID) + ".json";
+    }
 }
 
 function deleteDataForPactID(pactID) {
@@ -925,7 +935,7 @@ app.get('/list', function(req, res) {
             return;
         }
         
-        authenticateToken(req.signedCookies.pactID, req.signedCookies.token, function(success, pactID) {   
+        authenticateToken(req.signedCookies.pactID, req.signedCookies.token, false, function(success, pactID) {   
             if (success) {
                 getTokenForPact(pactID, fetchEvents, pactID);
             } else {
@@ -959,7 +969,7 @@ app.get('/location', function(req, res) {
         }
         
         // Attempt to authenticate cookie token
-        authenticateToken(req.signedCookies.pactID, req.signedCookies.token, function(success, pactID) {
+        authenticateToken(req.signedCookies.pactID, req.signedCookies.token, false, function(success, pactID) {
             if (success) {
                 loadClient(pactID, function(client) {
                     res.send({
@@ -997,7 +1007,7 @@ app.get('/delete', function(req, res) {
         }
         
         // Attempt to authenticate via token
-        authenticateToken(req.signedCookies.pactID, req.signedCookies.token, function(success, pactID) {
+        authenticateToken(req.signedCookies.pactID, req.signedCookies.token, false, function(success, pactID) {
             if (success) {
                 // Delete 
                 deleteDataForPactID(pactID);
