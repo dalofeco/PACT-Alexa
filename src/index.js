@@ -23,7 +23,8 @@ var fs = require('fs');
 // ************************ \\
 
 // WUNDERGROUND API Key
-const WUNDERGROUND_APIKEY = JSON.parse(fs.readFileSync(__dirname + "api-keys.json")).WUNDERGROUND;
+const WUNDERGROUND_APIKEY = JSON.parse(fs.readFileSync(__dirname + "secrets.json")).WUNDERGROUND;
+const APP_ID = JSON.parse(fs.readFileSync(__dirname + "secrets.json")).APP_ID;
 
 // ********************* \\
 // **** ALEXA STUFF **** \\
@@ -34,7 +35,7 @@ var Alexa = require("alexa-sdk");
 
 exports.handler = function(event, context, callback){
     var alexa = Alexa.handler(event, context);
-    alexa.appId = "amzn1.ask.skill.090d9ac8-0c6e-4a23-beda-02d049fc8a9c";
+    alexa.appId = APP_ID;
     
     var handlers = {
         'BestTimeIntent': handleBestTimeIntent,
